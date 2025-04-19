@@ -1,4 +1,4 @@
-objs = main.o data.o
+objs = main.o data.o fpx86.o
 flag =
 assb = as
 name = snake

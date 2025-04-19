@@ -3,8 +3,8 @@
         #
         # Constants
         #
-	SCREEN_WIDTH:  .word 100
-	SCREEN_HEIGHT: .word 100
+	SCREEN_WIDTH:  .word 102
+	SCREEN_HEIGHT: .word 102
 
 	.globl	SCREEN_WIDTH
 	.globl	SCREEN_HEIGHT
