@@ -22,7 +22,7 @@
 	ansi_init_screen: .string "\x1b[H\x1b[2J\x1b[?25l"
 	ansi_term_screen: .string "\x1b[H\x1b[2J\x1b[?25h"
 	ansi_print_body:  .string "\x1b[%d;%dH#"
-	ans_print_space:  .string "\x1b[%d;%dH "
+	ansi_print_space: .string "\x1b[%d;%dH "
 
 	board_up_bottom:  .string "+----------------------------------------------------------------------------------------------------+\n"
 	board_sides:      .string "+                                                                                                    +\n"
@@ -149,9 +149,6 @@ _start:
 	# Bottom edge of the boar
 	#
 	DO_SIMPLE_FP board_up_bottom(%rip)
-	#
-	# Snake's head will be stored in r15
-	#
 	leaq	SnakeBody(%rip), %r15
 
 .game:
@@ -196,24 +193,9 @@ _start:
 	jmp	.continue
 
 .continue:
-	call	update_xys
-	xorq	%rax, %rax
-	movw	0(%r15), %ax
-	addw	$2, %ax
-	cltq
-	pushq	%rax
-	movw	2(%r15), %ax
-	addw	$2, %ax
-	cltq
-	pushq	%rax
-
-	leaq	ansi_print_body(%rip), %rdi
-	movq	$1, %rsi
-	call	fpx86
-
-	popq	%rax
-	popq	%rax
-
+	movw	-2(%rbp), %di
+	call	__update_xys
+	leaq	SnakeBody(%rip), %r15
 	jmp	.game
 
 .end_program:
@@ -229,10 +211,71 @@ _start:
 	DO_SIMPLE_FP ansi_term_screen(%rip)
 	EXIT	$0
 
-update_xys:
+__update_xys:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$16, %rsp
+	movw	%di, -2(%rbp)
+	movw	$0, -4(%rbp)
+	leaq	SnakeBody(%rip), %r15
+.__update_loop:
+	movw	-4(%rbp), %ax
+	cmpw	-2(%rbp), %ax
+	je	.__update_fini
+	#
+	# Cleaning prev position
+	#
+	xorq	%rax, %rax
+	movw	4(%r15), %ax
+	addw	$2, %ax
+	cltq
+	pushq	%rax
+	movw	6(%r15), %ax
+	addw	$2, %ax
+	cltq
+	pushq	%rax
+	leaq	ansi_print_space(%rip), %rdi
+	movq	$1, %rsi
+	call	fpx86
+	popq	%rax
+	popq	%rax
+	#
+	# Printing current position
+	#
+	xorq	%rax, %rax
+	movw	0(%r15), %ax
+	addw	$2, %ax
+	cltq
+	pushq	%rax
+	movw	2(%r15), %ax
+	addw	$2, %ax
+	cltq
+	pushq	%rax
+	leaq	ansi_print_body(%rip), %rdi
+	movq	$1, %rsi
+	call	fpx86
+	popq	%rax
+	popq	%rax
+	#
+	# Updating positions
+	#
+	movw	(%r15), %ax
+	movw	%ax, 4(%r15)
+
+	movw	2(%r15), %ax
+	movw	%ax, 6(%r15)
+
+	incw	-4(%rbp)
+	addq	SNAKE_PART_SIZE(%rip), %r15
+	jmp	.__update_loop
+.__update_fini:
+	leave
 	ret
 	
-
 .err_small_windown:
 	ERRMSG	smallwindow_msg(%rip), smallwindow_len(%rip)
 	EXIT	$-1
+
+
+
+
