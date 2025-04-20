@@ -30,6 +30,15 @@
 	smallwindow_msg: .string "\n  snake: window too small\n\n"
 	smallwindow_len: .quad   28
 
+	w: .string "w\n"
+	a: .string "a\n"
+	s: .string "s\n"
+	d: .string "d\n"
+
+	timespec:
+		.quad	1
+		.quad	500000000
+
 
 .section .bss
 	# struct winsize {
@@ -94,8 +103,12 @@ _start:
 	# Stack distribution
 	#
 	#  -2(%rbp):	snake length
+	# -10(%rbp):    standard flag fd conf
+	# -18(%rbp):	last label visited while moving
 	#
 	movw	$1, -2(%rbp)
+	leaq	.go_down(%rip), %rax
+	movq	%rax, -18(%rbp)
 	#
 	# Getting current terminal dimensions.
 	#
@@ -146,29 +159,42 @@ _start:
 	movq	$Termiostruct, %rdx
 	syscall
 	#
-	# Bottom edge of the boar
+	# If we want the snake keep moving even if no
+	# key is pressed we need to make STDIN non-blocking
+	#
+	movq	$72, %rax
+	movq	$0, %rdi
+	movq	$3, %rsi
+	movq	$0, %rdx
+	syscall
+	movl	%eax, -10(%rbp)
+	orl	$2048, %eax
+	cltq
+	movq	%rax, %rdx
+	movq	$72, %rax
+	movq	$0, %rdi
+	movq	$4, %rsi
+	syscall
+	#
+	# Bottom edge of the bar
 	#
 	DO_SIMPLE_FP board_up_bottom(%rip)
+	#
+	# r15 contains the snake's head
+	#
 	leaq	SnakeBody(%rip), %r15
 
 .game:
-	#
-	# Getting input
-	#
 	movq	$0, %rax
 	movq	$0, %rdi
 	movq	$Input, %rsi
 	movq	$1, %rdx
 	syscall
-	#
-	# Leave the program by pressing 'q'
-	#
 	movb	(Input), %al
+	cmpb	$0, %al
+	jle	.repeat_motion
 	cmpb	$'q', %al
 	je	.end_program
-	#
-	# Move towards...
-	#
 	cmpb	$'w', %al
 	je	.go_up
 	cmpb	$'s', %al
@@ -177,28 +203,46 @@ _start:
 	je	.go_left
 	cmpb	$'d', %al
 	je	.go_right
-	jmp	.game
+
+.repeat_motion:
+	movq	-18(%rbp), %rax
+	jmp	*%rax
+
+.go_down:
+	leaq	.go_down(%rip), %rax
+	movq	-18(%rbp), %rax
+	DO_SIMPLE_FP s(%rip)
+	jmp	.continue
+
+.go_left:
+	leaq	.go_left(%rip), %rax
+	movq	-18(%rbp), %rax
+	DO_SIMPLE_FP a(%rip)
+	jmp	.continue
 
 .go_up:
-	decw	2(%r15)
+	leaq	.go_up(%rip), %rax
+	movq	-18(%rbp), %rax
+	DO_SIMPLE_FP w(%rip)
 	jmp	.continue
-.go_down:
-	incw	2(%r15)
-	jmp	.continue
-.go_left:
-	decw	0(%r15)
-	jmp	.continue
+
 .go_right:
-	incw	0(%r15)
+	leaq	.go_right(%rip), %rax
+	movq	-18(%rbp), %rax
+	DO_SIMPLE_FP d(%rip)
 	jmp	.continue
 
 .continue:
-	movw	-2(%rbp), %di
-	call	__update_xys
-	leaq	SnakeBody(%rip), %r15
 	jmp	.game
 
 .end_program:
+	movl	-10(%rbp), %eax
+	cltq
+	movq	%rax, %rdx
+	movq	$72, %rax
+	movq	$0, %rdi
+	movq	$4, %rsi
+	syscall
 	#
 	# Setting default terminal settings back
 	#
@@ -211,67 +255,6 @@ _start:
 	DO_SIMPLE_FP ansi_term_screen(%rip)
 	EXIT	$0
 
-__update_xys:
-	pushq	%rbp
-	movq	%rsp, %rbp
-	subq	$16, %rsp
-	movw	%di, -2(%rbp)
-	movw	$0, -4(%rbp)
-	leaq	SnakeBody(%rip), %r15
-.__update_loop:
-	movw	-4(%rbp), %ax
-	cmpw	-2(%rbp), %ax
-	je	.__update_fini
-	#
-	# Cleaning prev position
-	#
-	xorq	%rax, %rax
-	movw	4(%r15), %ax
-	addw	$2, %ax
-	cltq
-	pushq	%rax
-	movw	6(%r15), %ax
-	addw	$2, %ax
-	cltq
-	pushq	%rax
-	leaq	ansi_print_space(%rip), %rdi
-	movq	$1, %rsi
-	call	fpx86
-	popq	%rax
-	popq	%rax
-	#
-	# Printing current position
-	#
-	xorq	%rax, %rax
-	movw	0(%r15), %ax
-	addw	$2, %ax
-	cltq
-	pushq	%rax
-	movw	2(%r15), %ax
-	addw	$2, %ax
-	cltq
-	pushq	%rax
-	leaq	ansi_print_body(%rip), %rdi
-	movq	$1, %rsi
-	call	fpx86
-	popq	%rax
-	popq	%rax
-	#
-	# Updating positions
-	#
-	movw	(%r15), %ax
-	movw	%ax, 4(%r15)
-
-	movw	2(%r15), %ax
-	movw	%ax, 6(%r15)
-
-	incw	-4(%rbp)
-	addq	SNAKE_PART_SIZE(%rip), %r15
-	jmp	.__update_loop
-.__update_fini:
-	leave
-	ret
-	
 .err_small_windown:
 	ERRMSG	smallwindow_msg(%rip), smallwindow_len(%rip)
 	EXIT	$-1
