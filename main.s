@@ -1,22 +1,53 @@
 .section .rodata
-	.clswindow: .string "\x1b[H\x1b[2J"
-	.border1:   .string "+----------------------------------------------------------------------------------------------------+\n"
-	.filling:   .string "|                                                                                                    |\n"
+	.cleanscreen: .string "\x1b[H\x1b[2J"
+
+	.border1:     .string "+----------------------------------------------------------------------------------------------------+\n"
+	.filling:     .string "|                                                                                                    |\n"
+
+	.fmtmove:     .string "\x1b[%d;%dH#"
+
 
 .section .bss
+	# Space in memory to store winsize struct
 	.lcomm .windowinfo, 8
+	# Space for storing character pressed
 	.lcomm .input, 1
+	# Space for termios struct
 	.lcomm .termstts, 60
 
 .section .text
 
-.include "macros.inc"
+.macro EXIT a
+    movq    \a, %rdi
+    movq    $60, %rax
+    syscall
+.endm
+
+.macro  ERROUT a, b
+    leaq    \a, %rsi
+    movq    \b, %rdx
+    movq    $1, %rax
+    movq    $2, %rdi
+    syscall
+.endm
 
 .globl _start
 
 _start:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	#
+	# Stack distribution
+	#
+	#  -2(%rbp):	x position
+	#  -4(%rbp):	y position
+	#  -6(%rbp):	snake's length
+	#
+	#
+	subq	$8, %rsp
+	movw	$2, -2(%rbp)
+	movw	$2, -4(%rbp)
+	movw	$1, -6(%rbp)
 	#
 	# Getting windows size
 	#
@@ -37,7 +68,7 @@ _start:
 	#
 	# Cleaning the screen
 	#
-	leaq	.clswindow(%rip), %rdi
+	leaq	.cleanscreen(%rip), %rdi
 	movq	$1, %rsi
 	call	fpx86
 	#
@@ -83,19 +114,47 @@ _start:
 	movq	$21506, %rsi
 	movq	$.termstts, %rdx
 	syscall
-
+	#
+	# Prints first position
+	#
+	pushq	$2
+	pushq	$2
+	leaq	.fmtmove(%rip), %rdi
+	movq	$1, %rsi
+	call	fpx86
+	popq	%rax
+	popq	%rax
 .mainloop:
 	movq	$0, %rax
 	movq	$0, %rdi
 	leaq	.input(%rip), %rsi
 	movq	$1, %rdx
 	syscall
-
+	#
+	# Leave the program if 'q' is pressed
+	#
 	movb	.input(%rip), %al
 	cmpb	$'q', %al
 	je	.c_fini
+	#
+	# Where do you wanna go?
+	#
+	cmpb	$'w', %al
+	je	.move_up
+	cmpb	$'s', %al
+	je	.move_down
+	cmpb	$'a', %al
+	je	.move_left
+	cmpb	$'d', %al
+	je	.move_right
+	jmp	.continue
 
+.move_up:
+.move_down:
+.move_left:
+.move_right:
 
+.continue:
 	jmp	.mainloop
 
 .c_fini:
@@ -109,13 +168,7 @@ _start:
 	movq	$21506, %rsi
 	movq	$.termstts, %rdx
 	syscall
-
-	EXIT	$-1
-
-
-
-
-
+	EXIT	$0
 
 #  ________________
 # < error messages >

@@ -9,6 +9,10 @@
 	.globl	SCREEN_WIDTH
 	.globl	SCREEN_HEIGHT
 
+        SNAKE_MAX_LEN: .quad 40
+        .globl SNAKE_MAX_LEN
+
+
         #
         # Error messages
         #
@@ -17,4 +21,3 @@
 
         .globl ERR_MSG_SMALL_WIN
         .globl ERR_LEN_SMALL_WIN
-
