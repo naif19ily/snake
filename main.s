@@ -36,8 +36,8 @@
 	d: .string "d\n"
 
 	timespec:
-		.quad	1
-		.quad	500000000
+		.quad	0
+		.quad	100000000
 
 
 .section .bss
@@ -211,28 +211,39 @@ _start:
 .go_down:
 	leaq	.go_down(%rip), %rax
 	movq	-18(%rbp), %rax
-	DO_SIMPLE_FP s(%rip)
+	incw	2(%r15)
+	#DO_SIMPLE_FP s(%rip)
 	jmp	.continue
 
 .go_left:
 	leaq	.go_left(%rip), %rax
 	movq	-18(%rbp), %rax
-	DO_SIMPLE_FP a(%rip)
+	decw	0(%r15)
+	#DO_SIMPLE_FP a(%rip)
 	jmp	.continue
 
 .go_up:
 	leaq	.go_up(%rip), %rax
 	movq	-18(%rbp), %rax
-	DO_SIMPLE_FP w(%rip)
+	decw	2(%r15)
+	#DO_SIMPLE_FP w(%rip)
 	jmp	.continue
 
 .go_right:
 	leaq	.go_right(%rip), %rax
 	movq	-18(%rbp), %rax
-	DO_SIMPLE_FP d(%rip)
+	incw	0(%r15)
+	#DO_SIMPLE_FP d(%rip)
 	jmp	.continue
 
 .continue:
+	movw	-2(%rbp), %di
+	call	__draw_snake
+	movq	$35, %rax
+	leaq	timespec(%rip), %rdi
+	xorq	%rsi, %rsi
+	syscall
+	leaq	SnakeBody(%rip), %r15
 	jmp	.game
 
 .end_program:
@@ -254,6 +265,55 @@ _start:
 	syscall
 	DO_SIMPLE_FP ansi_term_screen(%rip)
 	EXIT	$0
+
+__draw_snake:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$8, %rsp
+	movw	%di, -2(%rbp)
+	movw	$0, -4(%rbp)
+.__draw_snake_loop:
+	movw	-4(%rbp), %ax
+	cmpw	-2(%rbp), %ax
+	je	.__draw_snake_fini
+
+	xorq	%rax, %rax
+	movw	4(%r15), %ax
+	addw	$2, %ax
+	pushq	%rax
+	movw	6(%r15), %ax
+	addw	$2, %ax
+	pushq	%rax
+	leaq	ansi_print_space(%rip), %rdi
+	movq	$1, %rsi
+	call	fpx86
+	popq	%rax
+	popq	%rax
+
+	xorq	%rax, %rax
+	movw	0(%r15), %ax
+	addw	$2, %ax
+	pushq	%rax
+	movw	2(%r15), %ax
+	addw	$2, %ax
+	pushq	%rax
+	leaq	ansi_print_body(%rip), %rdi
+	movq	$1, %rsi
+	call	fpx86
+	popq	%rax
+	popq	%rax
+
+	movw	0(%r15), %ax
+	movw	%ax, 4(%r15)
+	movw	2(%r15), %ax
+	movw	%ax, 6(%r15)
+
+	incw	-4(%rbp)
+	addq	SNAKE_PART_SIZE(%rip), %r15
+	jmp	.__draw_snake_loop
+.__draw_snake_fini:
+	leave
+	ret
 
 .err_small_windown:
 	ERRMSG	smallwindow_msg(%rip), smallwindow_len(%rip)
