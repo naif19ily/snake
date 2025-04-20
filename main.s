@@ -21,23 +21,18 @@
 	#
 	ansi_init_screen: .string "\x1b[H\x1b[2J\x1b[?25l"
 	ansi_term_screen: .string "\x1b[H\x1b[2J\x1b[?25h"
-	ansi_print_body:  .string "\x1b[%d;%dH#"
+	ansi_print_body:  .string "\x1b[%d;%dH*"
 	ansi_print_space: .string "\x1b[%d;%dH "
 
 	board_up_bottom:  .string "+----------------------------------------------------------------------------------------------------+\n"
-	board_sides:      .string "+                                                                                                    +\n"
+	board_sides:      .string "|                                                                                                    |\n"
 
 	smallwindow_msg: .string "\n  snake: window too small\n\n"
 	smallwindow_len: .quad   28
 
-	w: .string "w\n"
-	a: .string "a\n"
-	s: .string "s\n"
-	d: .string "d\n"
-
 	timespec:
 		.quad	0
-		.quad	100000000
+		.quad	40000000
 
 
 .section .bss
@@ -276,7 +271,6 @@ __draw_snake:
 	movw	-4(%rbp), %ax
 	cmpw	-2(%rbp), %ax
 	je	.__draw_snake_fini
-
 	xorq	%rax, %rax
 	movw	4(%r15), %ax
 	addw	$2, %ax
@@ -289,7 +283,6 @@ __draw_snake:
 	call	fpx86
 	popq	%rax
 	popq	%rax
-
 	xorq	%rax, %rax
 	movw	0(%r15), %ax
 	addw	$2, %ax
@@ -302,12 +295,10 @@ __draw_snake:
 	call	fpx86
 	popq	%rax
 	popq	%rax
-
 	movw	0(%r15), %ax
 	movw	%ax, 4(%r15)
 	movw	2(%r15), %ax
 	movw	%ax, 6(%r15)
-
 	incw	-4(%rbp)
 	addq	SNAKE_PART_SIZE(%rip), %r15
 	jmp	.__draw_snake_loop
@@ -318,7 +309,4 @@ __draw_snake:
 .err_small_windown:
 	ERRMSG	smallwindow_msg(%rip), smallwindow_len(%rip)
 	EXIT	$-1
-
-
-
 
