@@ -1,5 +1,2 @@
 
-    * check for correct dimensions                      [accomplished]
-    * draw board                                        [accomplished]
-    * set up terminal                                   [accomplished]
-    * make cursor invisible while playing
+    * Implement a scores file

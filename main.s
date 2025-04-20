@@ -1,183 +1,238 @@
 .section .rodata
-	.cleanscreen: .string "\x1b[H\x1b[2J"
+	#
+	# +----------------------+
+	# +                      + *
+	# +                      +  |_ rows starts here * and
+	# +                      +  |  ends there %
+	# +                      + %
+	# +----------------------+
+	#  |____________________|
+	#   this are the columns
+	#
+	BOARD_ROWS: .word 50
+	BOARD_COLS: .word 100
 
-	.border1:     .string "+----------------------------------------------------------------------------------------------------+\n"
-	.filling:     .string "|                                                                                                    |\n"
+	SNAKE_MAX_LEN: .word 30
+	SNAKE_PART_SIZE: .quad 8
 
-	.fmtmove:     .string "\x1b[%d;%dH#"
+	#
+	# Ansi scape codes before running the game
+	# and after running the game
+	#
+	ansi_init_screen: .string "\x1b[H\x1b[2J\x1b[?25l"
+	ansi_term_screen: .string "\x1b[H\x1b[2J\x1b[?25h"
+	ansi_print_body:  .string "\x1b[%d;%dH#"
+	ans_print_space:  .string "\x1b[%d;%dH "
+
+	board_up_bottom:  .string "+----------------------------------------------------------------------------------------------------+\n"
+	board_sides:      .string "+                                                                                                    +\n"
+
+	smallwindow_msg: .string "\n  snake: window too small\n\n"
+	smallwindow_len: .quad   28
 
 
 .section .bss
-	# Space in memory to store winsize struct
-	.lcomm .windowinfo, 8
-	# Space for storing character pressed
-	.lcomm .input, 1
-	# Space for termios struct
-	.lcomm .termstts, 60
+	# struct winsize {
+	#   unsigned short ws_row;
+	#   unsigned short ws_col;
+	#   unsigned short ws_xpixel;
+	#   unsigned short ws_ypixel;
+	# };
+	.lcomm	WinStruct, 8
+
+	# struct termios {
+	#   tcflag_t	c_iflag;
+	#   tcflag_t	c_oflag;
+	#   tcflag_t	c_cflag;
+	#   tcflag_t	c_lflag;
+	#   cc_t	c_cc[NCCS];
+	#   int		c_ispeed;
+	#   int		c_ospeed;
+	# };
+	.lcomm	Termiostruct, 60
+
+	# struct {
+	#   unsigned short x, y;
+	#   unsigned short px, py;
+	# } SnakeBody[SNAKE_MAX_LEN];
+	.lcomm	SnakeBody, 30 * 8
+
+	#
+	# Input buffer
+	#
+	.lcomm	Input, 1
 
 .section .text
 
 .macro EXIT a
-    movq    \a, %rdi
-    movq    $60, %rax
-    syscall
+	movq	\a, %rdi
+	movq	$60, %rax
+	syscall
 .endm
 
-.macro  ERROUT a, b
-    leaq    \a, %rsi
-    movq    \b, %rdx
-    movq    $1, %rax
-    movq    $2, %rdi
-    syscall
+.macro	DO_SIMPLE_FP, a
+	leaq	\a, %rdi
+	movq	$1, %rsi
+	call	fpx86
+.endm
+
+.macro ERRMSG a, b
+	movq	\b, %rdx
+	leaq	\a, %rsi
+	movq	$2, %rdi
+	movq	$1, %rax
+	syscall
 .endm
 
 .globl _start
 
-_start:
+_start:	
 	pushq	%rbp
 	movq	%rsp, %rbp
+	subq	$32, %rsp
 	#
 	# Stack distribution
 	#
-	#  -2(%rbp):	x position
-	#  -4(%rbp):	y position
-	#  -6(%rbp):	snake's length
+	#  -2(%rbp):	snake length
 	#
+	movw	$1, -2(%rbp)
 	#
-	subq	$8, %rsp
-	movw	$2, -2(%rbp)
-	movw	$2, -4(%rbp)
-	movw	$1, -6(%rbp)
-	#
-	# Getting windows size
+	# Getting current terminal dimensions.
 	#
 	movq	$16, %rax
-	movq	$1, %rdi
-	movq	$0x5413, %rsi
-	movq	$.windowinfo, %rdx
+	movq	$0, %rdi
+	movq	$21523, %rsi
+	movq	$WinStruct, %rdx
 	syscall
 	#
-	# Checking window is big enough
+	# Making sure terminal dimensions are enough
 	#
-	movw	(.windowinfo), %ax
-	cmpw	SCREEN_HEIGHT(%rip), %ax
-	jb	.error_win_small
- 	movw	(.windowinfo + 2), %ax
- 	cmpw	SCREEN_WIDTH(%rip), %ax
- 	jb	.error_win_small
+	movw	(WinStruct), %ax
+	cmpw	BOARD_ROWS(%rip), %ax
+	jbe	.err_small_windown
+	movw	(WinStruct + 2), %ax
+	cmpw	BOARD_COLS(%rip), %ax
+	jbe	.err_small_windown
 	#
-	# Cleaning the screen
+	# Drawing the board edges.
 	#
-	leaq	.cleanscreen(%rip), %rdi
-	movq	$1, %rsi
-	call	fpx86
+	DO_SIMPLE_FP ansi_init_screen(%rip)
+	DO_SIMPLE_FP board_up_bottom(%rip)
+	movw	$0, %r15w
+
+.board_drawing_loop:
+	cmpw	BOARD_ROWS(%rip), %r15w
+	je	.finish_set_up
+	DO_SIMPLE_FP board_sides(%rip)
+	incw	%r15w
+	jmp	.board_drawing_loop
+
+.finish_set_up:
 	#
-	# Printing board
-	#
-	leaq	.border1(%rip), %rdi
-	movq	$1, %rsi
-	call	fpx86
-	movq	$2, %r15
-.board_loop:
-	cmpw	SCREEN_HEIGHT(%rip), %r15w
-	leaq	.filling(%rip), %rdi
-	je	.finishboard
-	movq	$1, %rsi
-	call	fpx86
-	incq	%r15
-	jmp	.board_loop
-.finishboard:
-	leaq	.border1(%rip), %rdi
-	movq	$1, %rsi
-	call	fpx86
-	#
-	# Getting terminal settings
+	# Getting terminal default settings
 	#
 	movq	$16, %rax
 	movq	$0, %rdi
 	movq	$21505, %rsi
-	movq	$.termstts, %rdx
+	movq	$Termiostruct, %rdx
 	syscall
 	#
-	# Chamging conf
-	# -11 comes from ~ICANON & ~ECHO
+	# Setting nocanonical mode
 	#
-	movw	(.termstts + 12), %ax
-	andw	$-11, %ax
-	movw	%ax, (.termstts + 12)
-	#
-	# Setting new terminal conf
-	# termios struct definition: https://github.com/openbsd/src/blob/666a659208ae9191b22cd83518a9bb4a426358c7/sys/sys/termios.h#L194
-	#
+	andw	$-11, (Termiostruct + 12)
 	movq	$16, %rax
 	movq	$0, %rdi
 	movq	$21506, %rsi
-	movq	$.termstts, %rdx
+	movq	$Termiostruct, %rdx
 	syscall
 	#
-	# Prints first position
+	# Bottom edge of the boar
 	#
-	pushq	$2
-	pushq	$2
-	leaq	.fmtmove(%rip), %rdi
-	movq	$1, %rsi
-	call	fpx86
-	popq	%rax
-	popq	%rax
-.mainloop:
+	DO_SIMPLE_FP board_up_bottom(%rip)
+	#
+	# Snake's head will be stored in r15
+	#
+	leaq	SnakeBody(%rip), %r15
+
+.game:
+	#
+	# Getting input
+	#
 	movq	$0, %rax
 	movq	$0, %rdi
-	leaq	.input(%rip), %rsi
+	movq	$Input, %rsi
 	movq	$1, %rdx
 	syscall
 	#
-	# Leave the program if 'q' is pressed
+	# Leave the program by pressing 'q'
 	#
-	movb	.input(%rip), %al
+	movb	(Input), %al
 	cmpb	$'q', %al
-	je	.c_fini
+	je	.end_program
 	#
-	# Where do you wanna go?
+	# Move towards...
 	#
 	cmpb	$'w', %al
-	je	.move_up
+	je	.go_up
 	cmpb	$'s', %al
-	je	.move_down
+	je	.go_down
 	cmpb	$'a', %al
-	je	.move_left
+	je	.go_left
 	cmpb	$'d', %al
-	je	.move_right
+	je	.go_right
+	jmp	.game
+
+.go_up:
+	decw	2(%r15)
+	jmp	.continue
+.go_down:
+	incw	2(%r15)
+	jmp	.continue
+.go_left:
+	decw	0(%r15)
+	jmp	.continue
+.go_right:
+	incw	0(%r15)
 	jmp	.continue
 
-.move_up:
-.move_down:
-.move_left:
-.move_right:
-
 .continue:
-	jmp	.mainloop
+	call	update_xys
+	xorq	%rax, %rax
+	movw	0(%r15), %ax
+	addw	$2, %ax
+	cltq
+	pushq	%rax
+	movw	2(%r15), %ax
+	addw	$2, %ax
+	cltq
+	pushq	%rax
 
-.c_fini:
+	leaq	ansi_print_body(%rip), %rdi
+	movq	$1, %rsi
+	call	fpx86
+
+	popq	%rax
+	popq	%rax
+
+	jmp	.game
+
+.end_program:
 	#
-	# Setting default configs back
-	# 10 comes from ICANON | ECHO
+	# Setting default terminal settings back
 	#
-	orw	$10, (.termstts + 12)
+	orw	$10, (Termiostruct + 12)
 	movq	$16, %rax
 	movq	$0, %rdi
 	movq	$21506, %rsi
-	movq	$.termstts, %rdx
+	movq	$Termiostruct, %rdx
 	syscall
+	DO_SIMPLE_FP ansi_term_screen(%rip)
 	EXIT	$0
 
-#  ________________
-# < error messages >
-#  ----------------
-#         \   ^__^
-#          \  (oo)\_______
-#             (__)\       )\/\
-#                 ||----w |
-#                 ||     ||
-.error_win_small:
-	ERROUT	ERR_MSG_SMALL_WIN(%rip), ERR_LEN_SMALL_WIN(%rip)
-	EXIT	$1
+update_xys:
+	ret
+	
+
+.err_small_windown:
+	ERRMSG	smallwindow_msg(%rip), smallwindow_len(%rip)
+	EXIT	$-1
