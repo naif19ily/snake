@@ -37,3 +37,13 @@
 	# unsigned short ws_ypixel
 	.lcomm winsize, 8
 	.globl winsize
+
+	# tcflag_t c_iflag;
+	# tcflag_t c_oflag;
+	# tcflag_t c_cflag;
+	# tcflag_t c_lflag;
+	# cc_t     c_cc[NCCS];
+	# int      c_ispeed;
+	# int      c_ospeed;
+        .lcomm termios, 60
+        .globl termios
