@@ -92,7 +92,6 @@
 	call	fpx86
 .endm
 
-
 .macro ERRMSG a, b
 	movq	\a, %rsi
 	movq	\b, %rdx
@@ -101,11 +100,60 @@
 	syscall
 .endm
 
+.macro  SNAKE_IS_HERE
+        xorq    %rax, %rax
+        #
+        # Getting x-coord
+        #
+        movw    (%r15), %ax
+        addw    $2, %ax
+        movw    %ax, 4(%r15)
+        pushq   %rax
+        #
+        # Getting y-coord
+        #
+        movw    2(%r15), %ax
+        addw    $2, %ax
+        movw    %ax, 6(%r15)
+        pushq   %rax
+        #
+        # Printing
+        #
+        leaq    .ansi_snake_is_here(%rip), %rdi
+        movq    $1, %rsi
+        call    fpx86
+        popq    %rax
+        popq    %rax
+.endm
+
+.macro  SNAKE_WAS_HERE
+        xorq    %rax, %rax
+        #
+        # Getting x-coord
+        #
+        movw    4(%r15), %ax
+        pushq   %rax
+        #
+        # Getting x-coord
+        #
+        movw    6(%r15), %ax
+        pushq   %rax
+        #
+        # Printing
+        #
+        leaq    .ansi_snake_was_here(%rip), %rdi
+        movq    $1, %rsi
+        call    fpx86
+        popq    %rax
+        popq    %rax
+.endm
+
 .globl _start
 
 _start:
 	pushq	%rbp
 	movq	%rsp, %rbp
+        subq    $32, %rsp
 	#
 	# Stack distribution
 	#  -2(%rbp):      snake's length
@@ -186,8 +234,14 @@ _start:
 	movq	$0, %rdi
 	movq	$4, %rsi
 	syscall
+        #
+        # Snake's head is stored into r15
+        #
 	leaq	.snake(%rip), %r15
-
+        #
+        # Printing snake's head
+        #
+        SNAKE_IS_HERE
 .game:
 	movq	$0, %rax
 	movq	$0, %rdi
@@ -195,11 +249,44 @@ _start:
 	movq	$1, %rdx
 	syscall
 	movb	(.input), %al
-
+	#
+	# Leave the game (the correct way) by pressing 'q'
+	#
 	cmpb	$'q', %al
 	je	.end_game
+        cmpb    $'w', %al
+        je      .snake_up
+        cmpb    $'a', %al
+        je      .snake_left
+        cmpb    $'s', %al
+        je      .snake_down
+        cmpb    $'d', %al
+        je      .snake_right
+        movq    -14(%rbp), %rax
+	jmp	*%rax
 
-	jmp	.game
+.snake_down:
+        incw    2(%r15)
+        jmp     .continue
+.snake_up:
+        decw    2(%r15)
+        jmp     .continue
+.snake_left:
+        decw    0(%r15)
+        jmp     .continue
+.snake_right:
+        incw    0(%r15)
+        jmp     .continue
+.continue:
+        leaq    .timespec(%rip), %rdi
+        movq    $0, %rsi
+        movq    $35, %rax
+        syscall
+
+
+        SNAKE_WAS_HERE
+        SNAKE_IS_HERE
+        jmp     .game
 
 .end_game:
 	#
@@ -223,11 +310,6 @@ _start:
 	syscall
 	BPRINTF	.ansi_end_game(%rip), $1
 	EXIT	$0
-
-.snake_down:
-.snake_up:
-.snake_left:
-.snake_right:
 
 .fatal_small_window:
 	ERRMSG .small_window_msg(%rip), .small_window_len(%rip)
