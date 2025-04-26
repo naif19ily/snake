@@ -266,27 +266,43 @@ _start:
 	jmp	*%rax
 
 .snake_down:
+        movw    2(%r15), %ax
+        cmpw    .Y_MAX(%rip), %ax
+        je      .game_over
         incw    2(%r15)
         jmp     .continue
 .snake_up:
+        movw    2(%r15), %ax
+        cmpw    $-1, %ax
+        je      .game_over
         decw    2(%r15)
         jmp     .continue
 .snake_left:
+        movw    0(%r15), %ax
+        cmpw    $-1, %ax
+        je      .game_over
         decw    0(%r15)
         jmp     .continue
 .snake_right:
+        movw    0(%r15), %ax
+        cmpw    .X_MAX(%rip), %ax
+        je      .game_over
+        movw    2(%r15), %ax
         incw    0(%r15)
         jmp     .continue
 .continue:
+        #
+        # Adding delay
+        #
         leaq    .timespec(%rip), %rdi
         movq    $0, %rsi
         movq    $35, %rax
         syscall
-
-
-        SNAKE_WAS_HERE
-        SNAKE_IS_HERE
+        movw    -2(%rbp), %di
+        call    .__make_snake_move_0
         jmp     .game
+
+.game_over:
 
 .end_game:
 	#
@@ -310,6 +326,30 @@ _start:
 	syscall
 	BPRINTF	.ansi_end_game(%rip), $1
 	EXIT	$0
+
+.__make_snake_move_0:
+        pushq   %rbp
+        movq    %rsp, %rbp
+        subq    $4, %rsp
+        movw    %di, -2(%rbp)
+        movw    $0, -4(%rbp)
+.__0_chunk_loop:
+        movw    -4(%rbp), %ax
+        cmpw    %ax, -2(%rbp)
+        je      .__0_fini
+        SNAKE_WAS_HERE
+        SNAKE_IS_HERE
+        movq    .SNAKE_PORTION_SIZE(%rip), %rax
+        addq    %rax, %r15
+        incw    -4(%rbp)
+        jmp     .__0_chunk_loop
+.__0_fini:
+        #
+        # Put snake's head back into r15
+        #
+        leaq    .snake(%rip), %r15
+        leave
+        ret
 
 .fatal_small_window:
 	ERRMSG .small_window_msg(%rip), .small_window_len(%rip)
