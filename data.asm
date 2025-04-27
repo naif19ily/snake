@@ -38,7 +38,7 @@
         # ~~~~~~~~~~~~~~~~~~~~~~~ delay settings ~~~~~~~~~~#
 	timespec:                                          #
 		.quad 0                                    #
-		.quad 50000000                             #
+		.quad 70000001                             #
         .globl timespec                                    #
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
@@ -47,8 +47,11 @@
         .globl frame_b0
         .globl frame_b1
 
-	util_length: .string "\x1b[55;2Hlength: %d\n"
+	util_length: .string "\x1b[56;2Hlength: %d\n"
 	.globl util_length
+
+	util_coords: .string "\x1b[55;2Hcoords: %d %d\n"
+	.globl util_coords
 
 .section .bss
         # ~~~~~~~~~~~~~~~~~~~~~~~ winsize structre ~~~~~~~~#

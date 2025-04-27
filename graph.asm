@@ -85,45 +85,35 @@ graph_play:
         jmp     *%rax
 
 .__1_s:
-        movw    -2(%rbp), %di
-        movq    $2, %rsi
-        movw    $'+', %dx
-        call    .__update_chunks
+        incw    2(%r15)
         leaq    .__1_s(%rip), %rax
         movq    %rax, -10(%rbp)
         jmp     .__1_continue
 .__1_w:
-        movw    -2(%rbp), %di
-        movq    $2, %rsi
-        movw    $'-', %dx
-        call    .__update_chunks
+        decw    2(%r15)
         leaq    .__1_w(%rip), %rax
         movq    %rax, -10(%rbp)
         jmp     .__1_continue
 .__1_d:
-        movw    -2(%rbp), %di
-        movq    $0, %rsi
-        movw    $'+', %dx
-        call    .__update_chunks
+        incw    0(%r15)
         leaq    .__1_d(%rip), %rax
         movq    %rax, -10(%rbp)
         jmp     .__1_continue
 .__1_a:
-        movw    -2(%rbp), %di
-        movq    $0, %rsi
-        movw    $'-', %dx
-        call    .__update_chunks
+        decw    0(%r15)
         leaq    .__1_a(%rip), %rax
         movq    %rax, -10(%rbp)
         jmp     .__1_continue
 
 .__1_add_chunk:
         leaq    -2(%rbp), %rdi
+        movq    -10(%rbp), %rsi
         call    .__add_chunk
 
 .__1_continue:
         xorq    %rdi, %rdi
         movw    -2(%rbp), %di
+        call    .__update_chunks
         call    .__update_display
         movq    $35, %rax
         leaq    timespec(%rip), %rdi
@@ -139,35 +129,27 @@ graph_play:
 .__update_chunks:
         pushq   %rbp
         movq    %rsp, %rbp
-        subq    $22, %rsp
-        #
-        #  -2(%rbp):    snake's total length
-        #  -4(%rbp):    number of chunks visted
-        # -12(%rbp):    variable to be changed (x/y coord, offset)
-        # -14(%rbp):    operation to be performed (+/-) 
-        # -22(%rbp):    current address' chunk
-        #
+        subq    $4, %rsp
         movw    %di, -2(%rbp)
-        movw    $0, -4(%rbp)
-        movq    %rsi, -12(%rbp)
-        movw    %dx, -14(%rbp)
-        leaq    snake(%rip), %rax
-        movq    %rax, -22(%rbp)
+        movw    $1, -4(%rbp)
+        movw    4(%r15), %r8w
+        movw    6(%r15), %r9w
+        leaq    snake(%rip), %r10
+        addq    snake_chunk_size(%rip), %r10
 .__2_loop:
         movw    -4(%rbp), %ax
         cmpw    -2(%rbp), %ax
         je      .__2_return
-        movq    -22(%rbp), %rax
-        addq    -12(%rbp), %rax
-        cmpw    $'+', -14(%rbp)
-        je      .__2_inc
-        decw    (%rax)
-        jmp     .__2_iter
-.__2_inc:
-        incw    (%rax)
-.__2_iter:
-        movq    snake_chunk_size(%rip), %rax
-        addq    %rax, -22(%rbp)
+
+        movw    %r8w, 0(%r10)
+        movw    %r9w, 2(%r10)
+
+        movw    4(%r10), %r8w
+        movw    6(%r10), %r9w
+
+        addq    snake_chunk_size(%rip), %r10
+
+
         incw    -4(%rbp)
         jmp     .__2_loop
 .__2_return:
@@ -206,10 +188,9 @@ graph_play:
 .__add_chunk:
         pushq   %rbp
         movq    %rsp, %rbp
-        subq    $8, %rsp
+        subq    $16, %rsp
         movq    %rdi, -8(%rbp)
-
-
+        movq    %rsi, -16(%rbp)
         xorq    %rax, %rax
         xorq    %rdx, %rdx
         movw    (%rdi), %ax
@@ -221,26 +202,47 @@ graph_play:
         movq    %r14, %r13                              # r13 is the new chunk
         subq    snake_chunk_size(%rip), %r14            # r14 is the previous chunk
         xorq    %rax, %rax
-        movw    4(%r14), %ax
+        movw    0(%r14), %ax
         movw    %ax, 0(%r13)
         movw    %ax, 4(%r13)
-        movw    6(%r14), %ax
+        movw    2(%r14), %ax
         movw    %ax, 2(%r13)
         movw    %ax, 6(%r13)
-        movq    -8(%rbp), %rax
-        incw    (%rax)
+        movq    -16(%rbp), %rax
+        cmpq    .__1_w(%rip), %rax
+        je      .__4_w
+        cmpq    .__1_a(%rip), %rax
+        je      .__4_a
+        cmpq    .__1_s(%rip), %rax
+        je      .__4_s
+        cmpq    .__1_d(%rip), %rax
+        je      .__4_d
+.__4_w:
+        incw    2(%r13)
+        jmp     .__4_return
+.__4_s:
+        decw    2(%r13)
+        jmp     .__4_return
+.__4_d:
+        incw    0(%r13)
+        jmp     .__4_return
+.__4_a:
+        decw    0(%r13)
+        jmp     .__4_return
 
-        xorq    %rax, %rax
-        movq    -8(%rbp), %rdi
-        movw    (%rdi), %ax
-        cltq
-        leaq    util_length(%rip), %rdi
-        movq    $1, %rsi
-        pushq   %rax
-        call    fpx86
-        popq    %rax
+        #xorq    %rax, %rax
+        #movq    -8(%rbp), %rdi
+        #movw    (%rdi), %ax
+        #cltq
+        #leaq    util_length(%rip), %rdi
+        #movq    $1, %rsi
+        #pushq   %rax
+        #call    fpx86
+        #popq    %rax
 
 .__4_return:
+        movq    -8(%rbp), %rax
+        incw    (%rax)
         leave
         ret
 
