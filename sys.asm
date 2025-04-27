@@ -13,10 +13,10 @@ sys_check_terminal_size:
 	syscall
 	movw	minorows(%rip), %ax
 	cmpw	%ax, (winsize)
-	jl	err_small_window
+	jle	err_small_window
 	movw	minocols(%rip), %ax
 	cmpw	%ax, (winsize + 2)
-	jl	err_small_window
+	jle	err_small_window
 	ret
 
 .globl sys_disable_canonical_mode

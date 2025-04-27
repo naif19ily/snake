@@ -47,6 +47,9 @@
         .globl frame_b0
         .globl frame_b1
 
+	util_length: .string "\x1b[55;2Hlength: %d\n"
+	.globl util_length
+
 .section .bss
         # ~~~~~~~~~~~~~~~~~~~~~~~ winsize structre ~~~~~~~~#
 	# unsigned short ws_row                            #
