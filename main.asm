@@ -2,8 +2,8 @@
 
 .include "macros.inc"
 
-.globl _start
-_start:
+.globl main
+main:
         pushq   %rbp
         movq    %rsp, %rbp
         subq    $4, %rsp
@@ -11,6 +11,7 @@ _start:
         FP      $1, fp_init_game
         call    graph_draw_frame
         call    sys_disable_canonical_mode
+	call	sys_stdin_init
         movl    %eax, -4(%rbp)
         movw    $0, %cx
         leaq    snake(%rip), %r15
@@ -29,6 +30,13 @@ _start:
         addq    snake_chunk_size(%rip), %r15
         incw    %cx
         jmp     .set_up_snakes_body
+	#
+	# Setting up time for random number generation
+	#
+	movq	$0, %rdi
+	call	time
+	movq	%rax, %rdi
+	call	srand
 .continue_main_proc:
         call    graph_play
 .finish_program:

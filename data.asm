@@ -31,8 +31,15 @@
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
         # ~~~~~~~~~~~~~~~~~~~~~~~ snake maximum length ~~~~#
-        snake_chunk_size: .quad 8                          #
+        snake_chunk_size: .quad 10                         #
         .globl snake_chunk_size                            #
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+        # ~~~~~~~~~~~~~~~~~~~~~~~ delay settings ~~~~~~~~~~#
+	timespec:                                          #
+		.quad 0                                    #
+		.quad 40000000                             #
+        .globl timespec                                    #
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
         frame_b0: .string "+----------------------------------------------------------------------------------------------------+\n"
@@ -67,6 +74,15 @@
         # short y                                          #
         # short prevx                                      #
         # short prevy                                      #
-        .lcomm snake, 8 * 30                               #
+        # short used                                       #
+        .lcomm snake, 10 * 30                              #
         .globl snake                                       #
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+        # ~~~~~~~~~~~~~~~~~~~~~~~ food spawn structure ~~~~#
+        # short x                                          #
+        # short y                                          #
+        # bool  eaten                                      #
+        .lcomm food, 6                                     #
+        .globl food                                        #
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
