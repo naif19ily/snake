@@ -25,7 +25,7 @@ graph_draw_frame:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	subq	$2, %rsp
-	movw	$1, -2(%rbp)
+	movw	$0, -2(%rbp)
 	FP	$1, frame_b0(%rip)
 .__0_loop:
 	movw	frameheight(%rip), %ax
@@ -70,20 +70,33 @@ graph_play:
         jmp     *%rax
 .__1_w:
         decw    2(%r15)
+	movw	2(%r15), %ax
+	cmpw	$1, %ax
+	je	.__1_game_over
 	jmp	.__1_continue
 .__1_s:
         incw    2(%r15)
+	movw	2(%r15), %ax
+	cmpw	minorows(%rip), %ax
+	je	.__1_game_over
 	jmp	.__1_continue
 .__1_a:
 	decw	0(%r15)
+	movw	0(%r15), %ax
+	cmpw	$1, %ax
+	je	.__1_game_over
 	jmp	.__1_continue
 .__1_d:
 	incw	0(%r15)
+	movw	0(%r15), %ax
+	cmpw	minocols(%rip), %ax
+	je	.__1_game_over
 .__1_continue:
 	movw	-2(%rbp), %di
 	call	.update_snake_chunks
         jmp     .__1_loop
-
+.__1_game_over:
+	movq	$-1, %rax
 .__1_return:
         leave
         ret
