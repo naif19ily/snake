@@ -46,7 +46,7 @@ graph_play:
 	#  -2(%rbp):   snake's length
 	#  -4(%rbp):   x head's coord
 	#  -6(%rbp):   y head's coord
-	#  -14(%rbp):  last label visited
+	#  -14(%rbp):  last label visited (address)
 	#  -16(%rbp):  input (key pressed)
 	#
 	subq	$16, %rsp
@@ -77,20 +77,37 @@ graph_play:
 	je	.__1_a
 	cmpb	$'d', %al
 	je	.__1_d
+	cmpb	$'4', %al
+	je	.__1_inc_length
 	movq	-14(%rbp), %rax
 	jmp	*%rax
 .__1_s:
 	incw	-6(%rbp)
+	leaq	.__1_s(%rip), %rax
+	movq	%rax, -14(%rbp)
 	jmp	.__1_resume
 .__1_w:
 	decw	-6(%rbp)
+	leaq	.__1_w(%rip), %rax
+	movq	%rax, -14(%rbp)
 	jmp	.__1_resume
 .__1_d:
 	incw	-4(%rbp)
+	leaq	.__1_d(%rip), %rax
+	movq	%rax, -14(%rbp)
 	jmp	.__1_resume
 .__1_a:
 	decw	-4(%rbp)
+	leaq	.__1_a(%rip), %rax
+	movq	%rax, -14(%rbp)
 	jmp	.__1_resume
+
+.__1_inc_length:
+	incw	-2(%rbp)
+	movw	-2(%rbp), %ax
+	cmpw	snake_max_len(%rip), %ax
+	je	.__1_return
+
 .__1_resume:
 	xorq	%rdi, %rdi
 	movw	-2(%rbp), %di
@@ -99,10 +116,13 @@ graph_play:
 	movw	%ax, (%r15)
 	movw	-6(%rbp), %ax
 	movw	%ax, 2(%r15)
+	xorq	%rdi, %rdi
+	movw	-2(%rbp), %di
 	call	.__draw
 	movq	$35, %rax
 	leaq	timespec(%rip), %rdi
 	movq	$0, %rsi
+	movw	$0, -16(%rbp)
 	syscall
 	jmp	.__1_loop
 .__1_return:
@@ -127,12 +147,14 @@ graph_play:
 	cmpw	-2(%rbp), %ax
 	je	.__2_return
 	_FP	$' ', 0(%r15), 2(%r15)
-	movq	snake_chunk_size(%rip), %rax
-	movw	(%rdi, %rax,  ), %bx
-	movw	%bx, 0(%r15)
-	movw	(%rdi, %rax, 2), %bx
-	movw	%bx, 2(%r15)
-	subq	snake_chunk_size(%rip), %r15
+	movq	%r15, %r14
+	subq	snake_chunk_size(%rip), %r14
+	xorq	%rax, %rax
+	movw	0(%r14), %ax
+	movw	%ax, 0(%r15)
+	movw	2(%r14), %ax
+	movw	%ax, 2(%r15)
+	movq	%r14, %r15
 	incw	-4(%rbp)
 	jmp	.__2_loop
 .__2_return:
@@ -154,8 +176,7 @@ graph_play:
 	_FP	$'s', 0(%r15), 2(%r15)
 	incw	-4(%rbp)
 	addq	snake_chunk_size(%rip), %r15
+	jmp	.__3_loop
 .__3_return:
 	leave
 	ret
-
-.__add_chunk:
