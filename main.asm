@@ -23,6 +23,9 @@ main:
         #
         cmpw    %cx, snake_max_len(%rip)
         je      .continue_main_proc
+
+	# XXX: maybe can we avoid this?
+
         movw    $2, 0(%r15)
         movw    $2, 2(%r15)
         movw    $2, 4(%r15)
