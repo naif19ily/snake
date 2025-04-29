@@ -31,7 +31,7 @@
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
         # ~~~~~~~~~~~~~~~~~~~~~~~ snake maximum length ~~~~#
-        snake_chunk_size: .quad 10                         #
+        snake_chunk_size: .quad 4                          #
         .globl snake_chunk_size                            #
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
@@ -78,10 +78,7 @@
         # ~~~~~~~~~~~~~~~~~~~~~~~ snake chunk structure ~~~#
         # short x                                          #
         # short y                                          #
-        # short prevx                                      #
-        # short prevy                                      #
-        # short used                                       #
-        .lcomm snake, 10 * 30                              #
+        .lcomm snake, 4 * 100                              #
         .globl snake                                       #
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 

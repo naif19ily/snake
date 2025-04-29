@@ -18,6 +18,30 @@
         popq    %rax
 .endm
 
+.macro _GENFOD
+	xorq	%rax, %rax
+	xorq	%rdx, %rdx
+	xorq	%rbx, %rbx
+	#
+	# Generating y component
+	#
+	call	rand
+	movw	frameheight(%rip), %bx
+	divq	%rbx
+	movw	%dx, (food + 2)
+	addw	$2, (food + 2)
+	#
+	# Generating x component
+	#
+	call	rand
+	movw	framewidth(%rip), %bx
+	divq	%rbx
+	movw	%dx, (food)
+	addw	$2, (food)
+	movw	$0, (food +  4)
+	_FP	$'$', (food), (food + 2)
+.endm
+
 .globl graph_draw_frame
 graph_draw_frame:
 	pushq	%rbp
@@ -59,6 +83,7 @@ graph_play:
 	# Setting player
 	#
 	_FP	$'s',  $2, $2
+	_GENFOD
 .__1_loop:
 	movq	$0, %rax
 	movq	$0, %rdi
@@ -77,8 +102,6 @@ graph_play:
 	je	.__1_a
 	cmpb	$'d', %al
 	je	.__1_d
-	cmpb	$'4', %al
-	je	.__1_inc_length
 	movq	-14(%rbp), %rax
 	jmp	*%rax
 .__1_s:
@@ -109,6 +132,14 @@ graph_play:
 	je	.__1_return
 
 .__1_resume:
+	xorq	%rdi, %rdi
+	xorq	%rsi, %rsi
+	xorq	%rdx, %rdx
+	leaq	-2(%rbp), %rdi
+	movw	-4(%rbp), %si
+	movw	-6(%rbp), %dx
+	call	.__got_food
+
 	xorq	%rdi, %rdi
 	movw	-2(%rbp), %di
 	call	.__update_coords
@@ -179,4 +210,19 @@ graph_play:
 	jmp	.__3_loop
 .__3_return:
 	leave
+	ret
+
+.__got_food:
+	movw	(food), %ax
+	cmpw	%ax, %si
+	jne	.__4_return
+	movw	(food + 2), %ax
+	cmpw	%ax, %dx
+	jne	.__4_return
+	movq	-8(%rbp), %rax
+	_GENFOD
+	incw	(%rdi)
+	movw	(%rdi), %ax
+	cmpw	snake_max_len(%rip), %ax
+.__4_return:
 	ret
