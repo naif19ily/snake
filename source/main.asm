@@ -9,9 +9,15 @@
 	# Defines the minimum dimensions to run
 	# the program properly
 	#
-	.MinRows: .word 110
-	.MinCols: .word 56
+	.MinRows: .word 59
+	.MinCols: .word 110
 
+        #
+        # Useful (mandatory) ANSI Escape codes
+        #
+        .CmdCls: .string "\x1b[H\x1b[2J"
+
+        .Board1: .string "    +----------------------------------------------------------------------------------------------------+\n"
 
 .section .bss
 	# struct winsize
@@ -34,6 +40,7 @@ _start:
 	movq	%rsp, %rbp
 
 	call	._getermsz
+	call	._drawboard
 
 	EXIT	$0
 
@@ -53,6 +60,21 @@ _start:
 	jl	.fatal_dimns
 	leave
 	ret
+
+._drawboard:
+        pushq   %rbp
+        movq    %rsp, %rbp
+        CLS
+
+	movq	$1, %rax
+	movq	$1, %rdi
+	leaq	BoardFrame(%rip), %rsi
+	movq	$5612, %rdx
+	syscall
+
+        leave
+        ret
+
 
 .fatal_dimns:
 	EXIT	$-1
