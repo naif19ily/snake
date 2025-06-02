@@ -7,5 +7,8 @@
     draw game's layout                              (aac9244)
     configurate terminal                            (097ee16)
     spawn point                                     (b19ce9e)
+    updating board                                  (911b102)
     enable motions                                  ()
+    remove past locations                           ()
+    bounds checking                                 ()
 

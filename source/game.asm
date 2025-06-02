@@ -119,27 +119,25 @@ _Loop:
 .updview:
 	xorq	%rax, %rax
 	xorq	%rbx, %rbx
-	xorq	%rcx, %rcx
-	leaq	.SnakeBody(%rip), %r8
-
 	DBHEAD
 	DBSCORE
-
-
-
-
+	leaq	.SnakeBody(%rip), %r8
+	xorq	%r9, %r9
 .updv_loop:
-	cmpw	-4(%rbp), %cx
+	cmpw	-4(%rbp), %r9w
 	jz	.continue
-
-	incw	%cx
+	xorq	%rax, %rax
+	xorq	%rbx, %rbx
+	movw	-14(%rbp), %ax
+	movw	-16(%rbp), %bx
+	PUTXY	.PutChunk(%rip), %rax, %rbx
+	incw	%r9w
 	jmp	.updv_loop
 .continue:
 	movq	$35, %rax
 	leaq	.TimeSpec(%rip), %rdi
 	movq	$0, %rsi
 	syscall
-	movw	$0, -2(%rbp)
 	jmp	.toujour
 .fini:
 	leave
