@@ -4,5 +4,7 @@
     Task                                            Commit
 
     check terminal dimensions                       (263946e)
-    draw game's layout
+    draw game's layout                              (aac9244)
+    configurate terminal                            (097ee16)
+    spawn point:
 

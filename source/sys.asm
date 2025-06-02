@@ -77,7 +77,6 @@ _sysStart:
 	syscall
 	movl	%r8d, %eax
 	# -*-
-
 	leave
 	ret
 

@@ -31,17 +31,12 @@
 _start:
 	pushq	%rbp
 	movq	%rsp, %rbp
-
 	call	._getTermsz
 	call	_sysStart
 	call	._drawBoard
-
-.a:
-        jmp     .a
-
+	call	_Loop
 	call	_sysFinish
 	EXIT	$0
-
 ._getTermsz:	
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -58,7 +53,6 @@ _start:
 	jl	.fatal_dimns
 	leave
 	ret
-
 ._drawBoard:
         pushq   %rbp
         movq    %rsp, %rbp
@@ -69,6 +63,5 @@ _start:
 	syscall
         leave
         ret
-
 .fatal_dimns:
 	EXIT	$-1
