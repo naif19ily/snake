@@ -9,11 +9,3 @@
 	movq	$60, %rax
 	syscall
 .endm
-
-.macro CLS
-        movq    $1, %rax
-        movq    $1, %rdi
-        leaq    .CmdCls(%rip), %rsi
-        movq    $7, %rdx
-        syscall
-.endm

@@ -12,13 +12,6 @@
 	.MinRows: .word 59
 	.MinCols: .word 110
 
-        #
-        # Useful (mandatory) ANSI Escape codes
-        #
-        .CmdCls: .string "\x1b[H\x1b[2J"
-
-        .Board1: .string "    +----------------------------------------------------------------------------------------------------+\n"
-
 .section .bss
 	# struct winsize
 	# {
@@ -39,12 +32,17 @@ _start:
 	pushq	%rbp
 	movq	%rsp, %rbp
 
-	call	._getermsz
-	call	._drawboard
+	call	._getTermsz
+	call	_sysStart
+	call	._drawBoard
 
+.a:
+        jmp     .a
+
+	call	_sysFinish
 	EXIT	$0
 
-._getermsz:	
+._getTermsz:	
 	pushq	%rbp
 	movq	%rsp, %rbp
 	movq	$16, %rax
@@ -61,20 +59,16 @@ _start:
 	leave
 	ret
 
-._drawboard:
+._drawBoard:
         pushq   %rbp
         movq    %rsp, %rbp
-        CLS
-
 	movq	$1, %rax
 	movq	$1, %rdi
 	leaq	BoardFrame(%rip), %rsi
 	movq	$5612, %rdx
 	syscall
-
         leave
         ret
-
 
 .fatal_dimns:
 	EXIT	$-1
