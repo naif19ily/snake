@@ -11,12 +11,14 @@
 .section .bss
 	.SnakeBody: .zero 4 * 30
 	.FoodSpawn: .zero 4
+        .Grid:      .zero 50 * 100
 
-.section .rodata
+.section .data
 	.TimeSpec:
 		.quad 0
 		.quad 90000000
 
+.section .rodata
 	.PutChunk:  .string "\x1b[%d;%dHS"
 	.ClsChunk:  .string "\x1b[%d;%dH "
 	.PutFood:   .string "\x1b[%d;%dH*"
@@ -38,8 +40,22 @@
 .endm
 
 .macro UPDLST last
+	# Setting last label visited (a, w, s or d)
 	leaq	\last, %rax
 	movq	%rax, -12(%rbp)
+	# Detecting self-collisions
+	xorq	%rax, %rax
+	leaq	.Grid(%rip), %r14
+	movq	$100, %rbx
+	movw	-14(%rbp), %ax
+	mulq	%rbx
+	addq	%rax, %r14
+	movw	-16(%rbp), %ax
+	addq	%rax, %r14
+	cmpb	$1, (%r14)
+	jz	.fini
+	# Checking if head is on food spawn
+	xorq	%rax, %rax
 	movw	(.FoodSpawn), %ax
 	cmpw	%ax, -14(%rbp)
         jnz     .updview
@@ -70,6 +86,17 @@
 	movw	(.FoodSpawn), %ax
 	movw	(.FoodSpawn + 2), %bx
 	PUTXY	.PutFood(%rip), %rax, %rbx
+.endm
+
+.macro SETG2 r1, r2, to	
+	leaq	.Grid(%rip), %r14
+	xorq	%rdx, %rdx
+	movq	\r1, %rax
+	movq	$100, %rbx
+	mulq	%rbx
+	addq	%rax, %r14
+	addq	\r2, %r14
+	movb	\to, (%r14)
 .endm
 
 .globl _Loop
@@ -138,7 +165,6 @@ _Loop:
 	incw	-16(%rbp)
 	UPDLST	.d(%rip)
 	jmp	.updview
-
 .updview:
 	xorq	%rax, %rax
 	xorq	%rbx, %rbx
@@ -174,9 +200,11 @@ _Loop:
 	movw	(%r8), %r10w
 	movw	2(%r8), %r11w
 	PUTXY	.ClsChunk(%rip), %r10, %r11
+	SETG2	%r10, %r11, $0
 	movw	%r12w, (%r8)
 	movw	%r13w, 2(%r8)
 	PUTXY	.PutChunk(%rip), %r12, %r13
+	SETG2	%r12, %r13, $1
 	movw	%r10w, %r12w
 	movw	%r11w, %r13w
 	addq	$4, %r8
@@ -187,13 +215,11 @@ _Loop:
 	jz	.fini
 	movw	$0, -2(%rbp)
 	incw	-4(%rbp)
-
         xorq    %rax, %rax
         xorq    %rbx, %rbx
         movw    (.FoodSpawn), %ax
         movw    (.FoodSpawn + 2), %bx
         PUTXY   .ClsChunk(%rip), %rax, %rbx
-
         GENFOOD
 	jmp	.continue
 .continue:
@@ -205,7 +231,5 @@ _Loop:
 .fini:
 	leave
 	ret
-
-
 .fatal_no_soported_cpu:
 	EXIT	$-1
