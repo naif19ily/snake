@@ -3,6 +3,10 @@
 # / __| '_ \ / _` | |/ / _ \
 # \__ \ | | | (_| |   <  __/
 # |___/_| |_|\__,_|_|\_\___|
+#
+# Starting point, calls the needed functions to configurate
+# terminal and get everything running
+#
 
 .section .rodata
 	#

@@ -3,7 +3,9 @@
 # / __| '_ \ / _` | |/ / _ \
 # \__ \ | | | (_| |   <  __/
 # |___/_| |_|\__,_|_|\_\___|
-
+#
+# Does everything realted to terminal configuration
+#
 
 .section .rodata
         #

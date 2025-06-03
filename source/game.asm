@@ -3,6 +3,10 @@
 # / __| '_ \ / _` | |/ / _ \
 # \__ \ | | | (_| |   <  __/
 # |___/_| |_|\__,_|_|\_\___|
+#
+# This file contains all the logic needed for the snake to move,
+# food spawn, score and collitions (could be seen as the engine)
+#
 
 .section .bss
 	.SnakeBody: .zero
@@ -13,9 +17,9 @@
 		.quad 90000000
 
 	.PutChunk:  .string "\x1b[%d;%dHS"
-	.ClsChunk:  .string "\x1b[%d;%dH*"
-	.InfoHead:  .string "\x1b[56;13H %d %d"
-	.InfoScore: .string "\x1b[55;13H %d"
+	.ClsChunk:  .string "\x1b[%d;%dH "
+	.InfoHead:  .string "\x1b[56;13H %d %d     "
+	.InfoScore: .string "\x1b[55;13H %d        "
 
 
 .section .text
@@ -123,15 +127,31 @@ _Loop:
 	DBSCORE
 	leaq	.SnakeBody(%rip), %r8
 	xorq	%r9, %r9
+	xorq	%r10, %r10
+	xorq	%r11, %r11
 .updv_loop:
 	cmpw	-4(%rbp), %r9w
 	jz	.continue
 	xorq	%rax, %rax
 	xorq	%rbx, %rbx
+	movw	(%r8), %r10w
+	movw	2(%r8), %r11w
+	PUTXY	.ClsChunk(%rip), %r10, %r11
+	cmpw	$0, %r9w
+	jz	.updv_first
+	movw	%r10w, (%r8)
+	movw	%r11w, 2(%r8)
+	PUTXY	.PutChunk(%rip), %rax, %rbx
+	jmp	.updv_continue
+.updv_first:
 	movw	-14(%rbp), %ax
 	movw	-16(%rbp), %bx
+	movw	%ax, (%r8)
+	movw	%bx, 2(%r8)
 	PUTXY	.PutChunk(%rip), %rax, %rbx
+.updv_continue:
 	incw	%r9w
+	addq	$4, %r8
 	jmp	.updv_loop
 .continue:
 	movq	$35, %rax
