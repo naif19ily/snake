@@ -105,18 +105,26 @@ _Loop:
 	movq	-12(%rbp), %rax
 	jmp	*%rax
 .w:
+	cmpw	$3, -14(%rbp)
+	jz	.fini
 	decw	-14(%rbp)
 	UPDLST	.w(%rip)
 	jmp	.updview
 .s:
+	cmpw	$52, -14(%rbp)
+	jz	.fini
 	incw	-14(%rbp)
 	UPDLST	.s(%rip)
 	jmp	.updview
 .a:
+	cmpw	$6, -16(%rbp)
+	jz	.fini
 	decw	-16(%rbp)
 	UPDLST	.a(%rip)
 	jmp	.updview
 .d:
+	cmpw	$105, -16(%rbp)
+	jz	.fini
 	incw	-16(%rbp)
 	UPDLST	.d(%rip)
 	jmp	.updview
