@@ -21,8 +21,9 @@
 	.InfoHead:  .string "\x1b[56;13H %d %d     "
 	.InfoScore: .string "\x1b[55;13H %d        "
 
-
 .section .text
+
+.include "macros.inc"
 
 .macro PUTXY action, row, col
 	pushq	\col
@@ -102,11 +103,15 @@ _Loop:
 	jz	.s
 	cmpb	$'d', -2(%rbp)
 	jz	.d
+
+	cmpb	$'2', -2(%rbp)
+	jz	.gen
+
 	movq	-12(%rbp), %rax
 	jmp	*%rax
 .w:
 	cmpw	$3, -14(%rbp)
-	jz	.fini
+	jz	.fini							# NOTE: do not jump here
 	decw	-14(%rbp)
 	UPDLST	.w(%rip)
 	jmp	.updview
@@ -128,39 +133,57 @@ _Loop:
 	incw	-16(%rbp)
 	UPDLST	.d(%rip)
 	jmp	.updview
+
 .updview:
 	xorq	%rax, %rax
 	xorq	%rbx, %rbx
-	DBHEAD
-	DBSCORE
+	movw	-14(%rbp), %ax
+	movw	-16(%rbp), %bx
+	subw	$3, %ax
+	subw	$6, %bx
+	pushq	%rbx
+	pushq	%rax
+	leaq	.InfoHead(%rip), %rdi
+	xorq	%rsi, %rsi
+	movl	$1, %esi
+	call	fp86
+	addq	$16, %rsp
+	movw	-4(%rbp), %ax
+	pushq	%rax
+	leaq	.InfoScore(%rip), %rdi
+	xorq	%rsi, %rsi
+	movl	$1, %esi
+	call	fp86
+	addq	$8, %rsp
 	leaq	.SnakeBody(%rip), %r8
 	xorq	%r9, %r9
 	xorq	%r10, %r10
 	xorq	%r11, %r11
+	xorq	%r12, %r12
+	xorq	%r13, %r13
+	movw	-14(%rbp), %r12w
+	movw	-16(%rbp), %r13w
 .updv_loop:
 	cmpw	-4(%rbp), %r9w
 	jz	.continue
-	xorq	%rax, %rax
-	xorq	%rbx, %rbx
 	movw	(%r8), %r10w
 	movw	2(%r8), %r11w
 	PUTXY	.ClsChunk(%rip), %r10, %r11
-	cmpw	$0, %r9w
-	jz	.updv_first
-	movw	%r10w, (%r8)
-	movw	%r11w, 2(%r8)
-	PUTXY	.PutChunk(%rip), %rax, %rbx
-	jmp	.updv_continue
-.updv_first:
-	movw	-14(%rbp), %ax
-	movw	-16(%rbp), %bx
-	movw	%ax, (%r8)
-	movw	%bx, 2(%r8)
-	PUTXY	.PutChunk(%rip), %rax, %rbx
-.updv_continue:
-	incw	%r9w
+	movw	%r12w, (%r8)
+	movw	%r13w, 2(%r8)
+	PUTXY	.PutChunk(%rip), %r12, %r13
+	movw	%r10w, %r12w
+	movw	%r11w, %r13w
 	addq	$4, %r8
+	incw	%r9w
 	jmp	.updv_loop
+.gen:
+	cmpw	$30, -4(%rbp)
+	jz	.fini
+	movw	$0, -2(%rbp)
+	incw	-4(%rbp)
+	jmp	.continue
+
 .continue:
 	movq	$35, %rax
 	leaq	.TimeSpec(%rip), %rdi

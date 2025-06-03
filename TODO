@@ -1,14 +1,15 @@
 
     snake - ToDo list
 
-    Task                                            Commit
+    Task                                            Commit          Checkpoint
 
     check terminal dimensions                       (263946e)
     draw game's layout                              (aac9244)
     configurate terminal                            (097ee16)
     spawn point                                     (b19ce9e)
     updating board                                  (911b102)
-    enable motions                                  ()
-    remove past locations                           ()
-    bounds checking                                 ()
+    enable motions                                  (cee8e00)       Yes
+    remove past locations                           (d33d24d)
+    bounds checking                                 (0558907)
+    snake's growth
 
