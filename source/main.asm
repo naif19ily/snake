@@ -24,15 +24,17 @@
 	#   unsigned short int ws_xpixel;
 	#   unsigned short int ws_ypixel;
 	# };
-	.TermSize: .zero 8
+	TermSize: .zero 8
+
+	.globl TermSize
 
 .section .text
 
 .include "macros.inc"
 
-.globl main
+.globl _start
 
-main:
+_start:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	call	._getTermsz
@@ -47,12 +49,12 @@ main:
 	movq	$16, %rax
 	movq	$0, %rdi
 	movq	$21523, %rsi
-	leaq	.TermSize(%rip), %rdx
+	leaq	TermSize(%rip), %rdx
 	syscall
-	movw	(.TermSize), %ax
+	movw	(TermSize), %ax
 	cmpw	.MinRows(%rip), %ax
 	jl	.fatal_dimns
-	movw	(.TermSize + 2), %ax
+	movw	(TermSize + 2), %ax
 	cmpw	.MinCols(%rip), %ax
 	jl	.fatal_dimns
 	leave

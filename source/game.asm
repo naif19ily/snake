@@ -14,13 +14,13 @@
         .Grid:      .zero 50 * 100
 
 .section .data
-	.TimeSpec:
+	.SnakeDelay:
 		.quad 0
 		.quad 90000000
 
-	.TimeSpec2:
-		.quad 2
-		.quad 90000000
+	.GameOverDelay:
+		.quad 5
+		.quad 0
 
 .section .rodata
 	.PutChunk:  .string "\x1b[32;42m\x1b[%d;%dHS\x1b[0m"
@@ -215,8 +215,6 @@ _Loop:
 	incw	%r9w
 	jmp	.updv_loop
 .food_found:
-	cmpw	$30, -4(%rbp)									# TODO: make limit higher
-	jz	.game_over
 	movw	$0, -2(%rbp)
 	incw	-4(%rbp)
         xorq    %rax, %rax
@@ -228,20 +226,26 @@ _Loop:
 	jmp	.continue
 .continue:
 	movq	$35, %rax
-	leaq	.TimeSpec(%rip), %rdi
+	leaq	.SnakeDelay(%rip), %rdi
 	movq	$0, %rsi
 	syscall
 	jmp	.toujour
 .game_over:
         leaq    GameOver(%rip), %r8
-        movq    $25, %r9                                # row
-        movq    $21, %r10                               # column
+	xorq	%r9, %r9
+	movw	(TermSize), %r9w
+	subw	$4, %r9w
+	shrw	$1, %r9w
+	xorq	%r10, %r10
+	movw	(TermSize + 2), %r10w
+	subw	$69, %r10w
+	shrw	$1, %r10w
         movq    $0, %r11
 .gameov_loop:
         cmpq    $4, %r11
         jz      .delay
         pushq   (%r8)
-        pushq   $21
+        pushq   %r10
         pushq   %r9
         xorq    %rsi, %rsi
         movl    $1, %esi
@@ -254,7 +258,7 @@ _Loop:
         jmp     .gameov_loop
 .delay:
 	movq	$35, %rax
-	leaq	.TimeSpec2(%rip), %rdi
+	leaq	.GameOverDelay(%rip), %rdi
 	movq	$0, %rsi
 	syscall
 .fini:
