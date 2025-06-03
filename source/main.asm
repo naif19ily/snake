@@ -30,9 +30,9 @@
 
 .include "macros.inc"
 
-.globl _start
+.globl main
 
-_start:
+main:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	call	._getTermsz

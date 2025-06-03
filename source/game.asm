@@ -9,7 +9,8 @@
 #
 
 .section .bss
-	.SnakeBody: .zero
+	.SnakeBody: .zero 4 * 30
+	.FoodSpawn: .zero 4
 
 .section .rodata
 	.TimeSpec:
@@ -18,6 +19,7 @@
 
 	.PutChunk:  .string "\x1b[%d;%dHS"
 	.ClsChunk:  .string "\x1b[%d;%dH "
+	.PutFood:   .string "\x1b[%d;%dH*"
 	.InfoHead:  .string "\x1b[56;13H %d %d     "
 	.InfoScore: .string "\x1b[55;13H %d        "
 
@@ -35,33 +37,39 @@
 	addq	$16, %rsp
 .endm
 
-.macro DBHEAD
-	movw	-14(%rbp), %ax
-	movw	-16(%rbp), %bx
-	subw	$3, %ax
-	subw	$6, %bx
-	pushq	%rbx
-	pushq	%rax
-	leaq	.InfoHead(%rip), %rdi
-	xorq	%rsi, %rsi
-	movl	$1, %esi
-	call	fp86
-	addq	$16, %rsp
-.endm
-
-.macro DBSCORE
-	movw	-4(%rbp), %ax
-	pushq	%rax
-	leaq	.InfoScore(%rip), %rdi
-	xorq	%rsi, %rsi
-	movl	$1, %esi
-	call	fp86
-	addq	$8, %rsp
-.endm
-
 .macro UPDLST last
 	leaq	\last, %rax
 	movq	%rax, -12(%rbp)
+	movw	(.FoodSpawn), %ax
+	cmpw	%ax, -14(%rbp)
+        jnz     .updview
+	movw	(.FoodSpawn + 2), %ax
+	cmpw	%ax, -16(%rbp)
+        jnz     .updview
+        jmp     .food_found
+.endm
+
+.macro GENFOOD
+	xorq	%rax, %rax
+	xorq	%rdx, %rdx
+	xorq	%rbx, %rbx
+	rdrand	%rax
+	jnc	.fatal_no_soported_cpu
+	movw	$50, %bx
+	divq	%rbx
+	movw	%dx, (.FoodSpawn)
+	addw	$3, (.FoodSpawn)
+	rdrand	%rax
+	jnc	.fatal_no_soported_cpu
+	movw	$100, %bx
+	divq	%rbx
+	movw	%dx, (.FoodSpawn + 2)
+	addw	$6, (.FoodSpawn + 2)
+	xorq	%rax, %rax
+	xorq	%rbx, %rbx
+	movw	(.FoodSpawn), %ax
+	movw	(.FoodSpawn + 2), %bx
+	PUTXY	.PutFood(%rip), %rax, %rbx
 .endm
 
 .globl _Loop
@@ -87,6 +95,7 @@ _Loop:
 	# Snake's first chunk
 	movw	$3, (.SnakeBody)
 	movw	$6, (.SnakeBody + 2)
+	GENFOOD
 .toujour:
 	movq	$0, %rax
 	movq	$0, %rdi
@@ -103,10 +112,6 @@ _Loop:
 	jz	.s
 	cmpb	$'d', -2(%rbp)
 	jz	.d
-
-	cmpb	$'2', -2(%rbp)
-	jz	.gen
-
 	movq	-12(%rbp), %rax
 	jmp	*%rax
 .w:
@@ -177,13 +182,20 @@ _Loop:
 	addq	$4, %r8
 	incw	%r9w
 	jmp	.updv_loop
-.gen:
+.food_found:
 	cmpw	$30, -4(%rbp)
 	jz	.fini
 	movw	$0, -2(%rbp)
 	incw	-4(%rbp)
-	jmp	.continue
 
+        xorq    %rax, %rax
+        xorq    %rbx, %rbx
+        movw    (.FoodSpawn), %ax
+        movw    (.FoodSpawn + 2), %bx
+        PUTXY   .ClsChunk(%rip), %rax, %rbx
+
+        GENFOOD
+	jmp	.continue
 .continue:
 	movq	$35, %rax
 	leaq	.TimeSpec(%rip), %rdi
@@ -193,3 +205,7 @@ _Loop:
 .fini:
 	leave
 	ret
+
+
+.fatal_no_soported_cpu:
+	EXIT	$-1

@@ -11,5 +11,5 @@
     enable motions                                  (cee8e00)       Yes
     remove past locations                           (d33d24d)
     bounds checking                                 (0558907)
-    snake's growth
-
+    snake's growth                                  (127e482)
+    food generation                                 ()              Yes
