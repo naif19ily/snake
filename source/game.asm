@@ -18,10 +18,14 @@
 		.quad 0
 		.quad 90000000
 
+	.TimeSpec2:
+		.quad 2
+		.quad 90000000
+
 .section .rodata
-	.PutChunk:  .string "\x1b[%d;%dHS"
+	.PutChunk:  .string "\x1b[32;42m\x1b[%d;%dHS\x1b[0m"
 	.ClsChunk:  .string "\x1b[%d;%dH "
-	.PutFood:   .string "\x1b[%d;%dH*"
+	.PutFood:   .string "\x1b[31;40m\x1b[%d;%dH*\x1b[0m"
 	.InfoHead:  .string "\x1b[56;13H %d %d     "
 	.InfoScore: .string "\x1b[55;13H %d        "
 
@@ -53,7 +57,7 @@
 	movw	-16(%rbp), %ax
 	addq	%rax, %r14
 	cmpb	$1, (%r14)
-	jz	.fini
+	jz	.game_over
 	# Checking if head is on food spawn
 	xorq	%rax, %rax
 	movw	(.FoodSpawn), %ax
@@ -143,25 +147,25 @@ _Loop:
 	jmp	*%rax
 .w:
 	cmpw	$3, -14(%rbp)
-	jz	.fini							# NOTE: do not jump here
+	jz	.game_over
 	decw	-14(%rbp)
 	UPDLST	.w(%rip)
 	jmp	.updview
 .s:
 	cmpw	$52, -14(%rbp)
-	jz	.fini
+	jz	.game_over
 	incw	-14(%rbp)
 	UPDLST	.s(%rip)
 	jmp	.updview
 .a:
 	cmpw	$6, -16(%rbp)
-	jz	.fini
+	jz	.game_over
 	decw	-16(%rbp)
 	UPDLST	.a(%rip)
 	jmp	.updview
 .d:
 	cmpw	$105, -16(%rbp)
-	jz	.fini
+	jz	.game_over
 	incw	-16(%rbp)
 	UPDLST	.d(%rip)
 	jmp	.updview
@@ -211,8 +215,8 @@ _Loop:
 	incw	%r9w
 	jmp	.updv_loop
 .food_found:
-	cmpw	$30, -4(%rbp)
-	jz	.fini
+	cmpw	$30, -4(%rbp)									# TODO: make limit higher
+	jz	.game_over
 	movw	$0, -2(%rbp)
 	incw	-4(%rbp)
         xorq    %rax, %rax
@@ -228,6 +232,31 @@ _Loop:
 	movq	$0, %rsi
 	syscall
 	jmp	.toujour
+.game_over:
+        leaq    GameOver(%rip), %r8
+        movq    $25, %r9                                # row
+        movq    $21, %r10                               # column
+        movq    $0, %r11
+.gameov_loop:
+        cmpq    $4, %r11
+        jz      .delay
+        pushq   (%r8)
+        pushq   $21
+        pushq   %r9
+        xorq    %rsi, %rsi
+        movl    $1, %esi
+        leaq    Gfmt(%rip), %rdi
+        call    fp86
+        addq    $24, %rsp
+        addq    $8, %r8
+        incq    %r11
+        incq    %r9
+        jmp     .gameov_loop
+.delay:
+	movq	$35, %rax
+	leaq	.TimeSpec2(%rip), %rdi
+	movq	$0, %rsi
+	syscall
 .fini:
 	leave
 	ret

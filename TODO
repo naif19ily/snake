@@ -13,5 +13,6 @@
     bounds checking                                 (0558907)
     snake's growth                                  (127e482)
     food generation                                 (2333262)       Yes
-    self-collisions
+    self-collisions                                 (599107a)
+    game over screen                                (       )       Yes
 
