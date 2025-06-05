@@ -15,7 +15,7 @@
     food generation                                 (2333262)       Yes
     self-collisions                                 (599107a)
     game over screen                                (73cbe2c)       Yes
-    username as exec argument
+    username as exec argument                       (dc0c177)
     store info into file
     replay argument
 

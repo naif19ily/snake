@@ -32,8 +32,6 @@
 
 .section .text
 
-.include "macros.inc"
-
 # Used to print PutFood, PutChunk and ClsChunk
 # action shall be the string to print and row
 # and col the arguments 'action' takes
@@ -89,13 +87,13 @@
 	xorq	%rdx, %rdx
 	xorq	%rbx, %rbx
 	rdrand	%rax
-	jnc	.fatal_no_soported_cpu
+	jnc	fatal_cpu
 	movw	$50, %bx
 	divq	%rbx
 	movw	%dx, (.FoodSpawn)
 	addw	$3, (.FoodSpawn)
 	rdrand	%rax
-	jnc	.fatal_no_soported_cpu
+	jnc	fatal_cpu
 	movw	$100, %bx
 	divq	%rbx
 	movw	%dx, (.FoodSpawn + 2)
@@ -121,9 +119,9 @@
 	movb	\to, (%r14)
 .endm
 
-.globl _Loop
+.globl _loop
 
-_Loop:
+_loop:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	# Stack distribution
@@ -132,9 +130,7 @@ _Loop:
 	# -12: last motion
 	# -14: snake's head row (this works as the next move)
 	# -16: snake's head col (this works as the next move)
-        # -24: username
-	subq	$24, %rsp
-        movq    %rdi, -24(%rbp)
+	subq	$16, %rsp
 	movw	$0, -2(%rbp)
 	movw	$1, -4(%rbp)
 	leaq	.s(%rip), %rax
@@ -148,7 +144,7 @@ _Loop:
 	movw	$6, (.SnakeBody + 2)
 	GENFOOD
         # Printing username
-        movq    -24(%rbp), %rax
+	movq	(ArgUsrName), %rax
         pushq   %rax
         leaq    .InfoUsrnm(%rip), %rdi
         movl    $1, %esi
@@ -316,5 +312,3 @@ _Loop:
 .fini:
 	leave
 	ret
-.fatal_no_soported_cpu:
-	EXIT	$-1

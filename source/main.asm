@@ -34,27 +34,12 @@
 .globl _start
 
 _start:
-	pushq	%rbp
-	movq	%rsp, %rbp
-	subq	$8, %rsp
-	movq	8(%rbp), %rax
-	cmpq	$3, %rax
-	jz	.args
-	jmp	.continue
-.args:
-	movq	16(%rbp), %rax
-	movq	24(%rbp), %rbx
-	movq	%rbx, -8(%rbp)
-	movzbl	(%rax), %eax
-	cmpb	$'P', %al
-	jz	.continue
-	# TODO: load file bla bla bla
-.continue:
+	movq	%rsp, %r15
+	call	_parseArgs
 	call	._getTermsz
 	call	_sysStart
 	call	._drawBoard
-	movq	-8(%rbp), %rdi
-	call	_Loop
+	call	_loop
 	call	_sysFinish
 ._fini:
 	EXIT	$0
@@ -68,10 +53,10 @@ _start:
 	syscall
 	movw	(TermSize), %ax
 	cmpw	.MinRows(%rip), %ax
-	jl	.fatal_dimns
+	jl	fatal_dims
 	movw	(TermSize + 2), %ax
 	cmpw	.MinCols(%rip), %ax
-	jl	.fatal_dimns
+	jl	fatal_dims
 	leave
 	ret
 ._drawBoard:
@@ -84,5 +69,3 @@ _start:
 	syscall
         leave
         ret
-.fatal_dimns:
-	EXIT	$-1
