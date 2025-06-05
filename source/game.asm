@@ -9,7 +9,7 @@
 #
 
 .section .bss
-	.SnakeBody: .zero 4 * 30
+	.SnakeBody: .zero 4 * 1024
 	.FoodSpawn: .zero 4
         .Grid:      .zero 50 * 100
 
@@ -28,11 +28,15 @@
 	.PutFood:   .string "\x1b[31;40m\x1b[%d;%dH*\x1b[0m"
 	.InfoHead:  .string "\x1b[56;13H %d %d     "
 	.InfoScore: .string "\x1b[55;13H %d        "
+        .InfoUsrnm: .string "\x1b[57;13H %s"
 
 .section .text
 
 .include "macros.inc"
 
+# Used to print PutFood, PutChunk and ClsChunk
+# action shall be the string to print and row
+# and col the arguments 'action' takes
 .macro PUTXY action, row, col
 	pushq	\col
 	pushq	\row
@@ -43,11 +47,19 @@
 	addq	$16, %rsp
 .endm
 
+# After every move several things needs to be checked
+# such as setting the last label visited, collision
+# detection and check if the user got some food in order
+# to spawn another apple somewhere else.
 .macro UPDLST last
+        #
 	# Setting last label visited (a, w, s or d)
+        #
 	leaq	\last, %rax
 	movq	%rax, -12(%rbp)
+        #
 	# Detecting self-collisions
+        #
 	xorq	%rax, %rax
 	leaq	.Grid(%rip), %r14
 	movq	$100, %rbx
@@ -58,7 +70,9 @@
 	addq	%rax, %r14
 	cmpb	$1, (%r14)
 	jz	.game_over
+        #
 	# Checking if head is on food spawn
+        #
 	xorq	%rax, %rax
 	movw	(.FoodSpawn), %ax
 	cmpw	%ax, -14(%rbp)
@@ -69,6 +83,7 @@
         jmp     .food_found
 .endm
 
+# As the name says this macro generates food somewhere in the map
 .macro GENFOOD
 	xorq	%rax, %rax
 	xorq	%rdx, %rdx
@@ -92,6 +107,9 @@
 	PUTXY	.PutFood(%rip), %rax, %rbx
 .endm
 
+# In order to detect self collisions a grid of 50 * 100
+# bytes is used, all spots where snake is are marked as
+# 1, otherwise 0
 .macro SETG2 r1, r2, to	
 	leaq	.Grid(%rip), %r14
 	xorq	%rdx, %rdx
@@ -114,7 +132,9 @@ _Loop:
 	# -12: last motion
 	# -14: snake's head row (this works as the next move)
 	# -16: snake's head col (this works as the next move)
-	subq	$16, %rsp
+        # -24: username
+	subq	$24, %rsp
+        movq    %rdi, -24(%rbp)
 	movw	$0, -2(%rbp)
 	movw	$1, -4(%rbp)
 	leaq	.s(%rip), %rax
@@ -127,6 +147,13 @@ _Loop:
 	movw	$3, (.SnakeBody)
 	movw	$6, (.SnakeBody + 2)
 	GENFOOD
+        # Printing username
+        movq    -24(%rbp), %rax
+        pushq   %rax
+        leaq    .InfoUsrnm(%rip), %rdi
+        movl    $1, %esi
+        call    fp86
+        addq    $8, %rsp
 .toujour:
 	movq	$0, %rax
 	movq	$0, %rdi
@@ -172,6 +199,9 @@ _Loop:
 .updview:
 	xorq	%rax, %rax
 	xorq	%rbx, %rbx
+        #
+        # Updating head's position coords
+        #
 	movw	-14(%rbp), %ax
 	movw	-16(%rbp), %bx
 	subw	$3, %ax
@@ -183,6 +213,9 @@ _Loop:
 	movl	$1, %esi
 	call	fp86
 	addq	$16, %rsp
+        #
+        # Updating score
+        #
 	movw	-4(%rbp), %ax
 	pushq	%rax
 	leaq	.InfoScore(%rip), %rdi
@@ -190,6 +223,9 @@ _Loop:
 	movl	$1, %esi
 	call	fp86
 	addq	$8, %rsp
+        #
+        # Setting registers to update snake chunks
+        #
 	leaq	.SnakeBody(%rip), %r8
 	xorq	%r9, %r9
 	xorq	%r10, %r10
@@ -201,14 +237,22 @@ _Loop:
 .updv_loop:
 	cmpw	-4(%rbp), %r9w
 	jz	.continue
+        # r10 and r11 will contain the current position
+        # of this chunk
 	movw	(%r8), %r10w
 	movw	2(%r8), %r11w
 	PUTXY	.ClsChunk(%rip), %r10, %r11
+        # set the current chunk to zero since it will no
+        # longer be here
 	SETG2	%r10, %r11, $0
+        # r12 and r13 contain the new position for this
+        # chunk
 	movw	%r12w, (%r8)
 	movw	%r13w, 2(%r8)
 	PUTXY	.PutChunk(%rip), %r12, %r13
+        # set to 1 this new chunk position
 	SETG2	%r12, %r13, $1
+        # do swap for the next chunk
 	movw	%r10w, %r12w
 	movw	%r11w, %r13w
 	addq	$4, %r8
@@ -217,6 +261,10 @@ _Loop:
 .food_found:
 	movw	$0, -2(%rbp)
 	incw	-4(%rbp)
+        #
+        # Remove the food from where it used
+        # to be and generate a new one somehere else
+        #
         xorq    %rax, %rax
         xorq    %rbx, %rbx
         movw    (.FoodSpawn), %ax
@@ -231,6 +279,10 @@ _Loop:
 	syscall
 	jmp	.toujour
 .game_over:
+        #
+        # Printing the Game Over string
+        # in a fancy way...
+        #
         leaq    GameOver(%rip), %r8
 	xorq	%r9, %r9
 	movw	(TermSize), %r9w

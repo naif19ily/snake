@@ -25,7 +25,6 @@
 	#   unsigned short int ws_ypixel;
 	# };
 	TermSize: .zero 8
-
 	.globl TermSize
 
 .section .text
@@ -37,11 +36,27 @@
 _start:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	subq	$8, %rsp
+	movq	8(%rbp), %rax
+	cmpq	$3, %rax
+	jz	.args
+	jmp	.continue
+.args:
+	movq	16(%rbp), %rax
+	movq	24(%rbp), %rbx
+	movq	%rbx, -8(%rbp)
+	movzbl	(%rax), %eax
+	cmpb	$'P', %al
+	jz	.continue
+	# TODO: load file bla bla bla
+.continue:
 	call	._getTermsz
 	call	_sysStart
 	call	._drawBoard
+	movq	-8(%rbp), %rdi
 	call	_Loop
 	call	_sysFinish
+._fini:
 	EXIT	$0
 ._getTermsz:	
 	pushq	%rbp
