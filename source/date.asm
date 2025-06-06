@@ -8,13 +8,13 @@
 #
 
 .section .bss
-	Day: .zero 8
-	Month: .zero 8
-	Year: .zero 8
+	ThisDay: .zero 8
+	ThisMonth: .zero 8
+	ThisYear: .zero 8
 
-	.globl Day
-	.globl Month
-	.globl Year
+	.globl ThisDay
+	.globl ThisMonth
+	.globl ThisYear
 
 .section .data
 	.NoDays:
@@ -30,6 +30,35 @@
 		.quad 31
 		.quad 30
 		.quad 31
+	
+.section .rodata
+        .Jan: .string "Jan"
+        .Feb: .string "Feb"
+        .Mar: .string "Mar"
+        .Apr: .string "Apr"
+        .May: .string "May"
+        .Jun: .string "Jun"
+        .Jul: .string "Jul"
+        .Aug: .string "Aug"
+        .Sep: .string "Sep"
+        .Oct: .string "Oct"
+        .Nov: .string "Nov"
+        .Dec: .string "Dec"
+
+        Months:
+                .quad .Jan
+                .quad .Feb
+                .quad .Mar
+                .quad .Apr
+                .quad .May
+                .quad .Jun
+                .quad .Jul
+                .quad .Aug
+                .quad .Sep
+                .quad .Oct
+                .quad .Nov
+                .quad .Dec
+        .globl Months
 
 .section .text
 
@@ -101,9 +130,9 @@ _getDate:
 	xorq	%rcx, %rcx
 	leaq	.NoDays(%rip), %r9
 	movq	-16(%rbp), %rax
-	movq	%rax, (Month)
+	movq	%rax, (ThisMonth)
 	movq	-24(%rbp), %rax
-	movq	%rax, (Year)
+	movq	%rax, (ThisYear)
 	xorq	%rdx, %rdx
 	movq	-24(%rbp), %rax
 	movq	$4, %rbx
@@ -120,6 +149,6 @@ _getDate:
 	incq	%rcx
 	jmp	.get_day
 .fini:
-	movq	%r8, (Day)
+	movq	%r8, (ThisDay)
 	leave
 	ret

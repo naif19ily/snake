@@ -35,9 +35,7 @@
 
 _start:
 	movq	%rsp, %r15
-
         call    _getDate
-
         call    _getRecord
 	call	_parseArgs
 	call	._getTermsz

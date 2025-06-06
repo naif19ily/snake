@@ -29,7 +29,7 @@
 	.InfoHead:  .string "\x1b[56;13H %d %d     "
 	.InfoScore: .string "\x1b[55;13H %d        "
         .InfoUsrnm: .string "\x1b[57;13H %s"
-	.InfoRecrd: .string "\x1b[58;13H %d by %s"
+	.InfoRecrd: .string "\x1b[58;13H %d by %s on %d %s %d"
 
 .section .text
 
@@ -152,6 +152,11 @@ _loop:
         call    fp86
         addq    $8, %rsp
         # Printing record
+        pushq   (ThisYear)
+        movq    ThisMonth(%rip), %rdi
+        movq    Months(, %rdi, 8), %rax
+        pushq   %rax
+        pushq   (ThisDay)
 	movq	RecordPlayer(%rip), %rax
         pushq   %rax
 	movq	RecordScore(%rip), %rax
@@ -159,7 +164,7 @@ _loop:
         leaq    .InfoRecrd(%rip), %rdi
         movl    $1, %esi
         call    fp86
-        addq    $16, %rsp
+        addq    $40, %rsp
 .toujour:
 	movq	$0, %rax
 	movq	$0, %rdi

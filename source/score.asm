@@ -23,6 +23,15 @@
 	RecordPlayer: .quad 0
 	.globl RecordPlayer
 
+        RecordDay: .quad 0
+        .globl RecordDay
+
+        RecordMonth: .quad 0
+        .globl RecordMonth
+
+        RecordYear: .quad 0
+        .globl RecordYear
+
 	.Buffer: .quad 0
 
 .section .text
@@ -40,7 +49,20 @@ _getRecord:
 	call	_getNumber
 	movq	%rax, (RecordScore)
 	incq	%rdi
+	call	_getNumber
+	movq	%rax, (RecordDay)
+	incq	%rdi
+	call	_getNumber
+	movq	%rax, (RecordMonth)
+	incq	%rdi
+	call	_getNumber
+	movq	%rax, (RecordYear)
+	incq	%rdi
 	movq	%rdi, (RecordPlayer)
 	ret
 .return:
         ret
+
+
+
+# TODO close file & unmap buffer
