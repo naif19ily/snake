@@ -12,6 +12,25 @@
 	Month: .zero 8
 	Year: .zero 8
 
+	.globl Day
+	.globl Month
+	.globl Year
+
+.section .data
+	.NoDays:
+		.quad 31
+		.quad 28
+		.quad 31
+		.quad 30
+		.quad 31
+		.quad 30
+    		.quad 31
+		.quad 31
+		.quad 30
+		.quad 31
+		.quad 30
+		.quad 31
+
 .section .text
 
 .globl _getDate
@@ -56,6 +75,7 @@ _getDate:
 	incq	-24(%rbp)
 	jmp	.get_year_loop
 .got_year:
+	# r8 will hold the ultimate value for the days
 	movq	-8(%rbp), %r8
 	movq	$1970, %r9
 .get_month_loop:
@@ -77,3 +97,29 @@ _getDate:
 	subq	%r10, %r8
 	jmp	.get_month_loop
 .got_month:
+	incq	%r8
+	xorq	%rcx, %rcx
+	leaq	.NoDays(%rip), %r9
+	movq	-16(%rbp), %rax
+	movq	%rax, (Month)
+	movq	-24(%rbp), %rax
+	movq	%rax, (Year)
+	xorq	%rdx, %rdx
+	movq	-24(%rbp), %rax
+	movq	$4, %rbx
+	divq	%rbx
+	cmpq	$4, %rbx
+	jnz	.get_day
+	incq	(.NoDays + 8)
+.get_day:
+	cmpq	-16(%rbp), %rcx
+	jz	.fini
+	movq	(%r9), %rax
+	subq	%rax, %r8
+	addq	$8, %r9
+	incq	%rcx
+	jmp	.get_day
+.fini:
+	movq	%r8, (Day)
+	leave
+	ret
