@@ -10,7 +10,7 @@
 	syscall
 .endm
 
-.macro RDFILE path, fd, size
+.macro RDFILE path, fd, size, buff
 	movq	$2, %rax
 	leaq	\path, %rdi
 	movq	$2, %rsi
@@ -26,8 +26,35 @@
 	syscall
 	movq	%rax, (\size)
 	movq	$8, %rax
-	movq	(\size), %rdi
+	movq	(\fd), %rdi
 	xorq	%rsi, %rsi
 	xorq	%rdx, %rdx
+	syscall
+	movq	$9, %rax
+	xorq	%rdi, %rdi
+	movq	\size(%rip), %rsi
+	movq	$3, %rdx
+	movq	$34, %r10
+	movq	$-1, %r8
+	xorq	%r9, %r9
+	syscall
+	movq	%rax, \buff
+	movq	$0, %rax
+	movq	(\fd), %rdi
+	movq	\buff, %rsi
+	movq	(\size), %rdx
+	syscall
+.endm
+
+.macro UNMAP addr, len
+	movq	$11, %rax
+	movq	\addr, %rdi
+	movq	\len, %rsi
+	syscall
+.endm
+
+.macro CLOSE fd
+	movq	$3, %rax
+	movq	\fd, %rdi
 	syscall
 .endm

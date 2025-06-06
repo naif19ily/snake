@@ -10,17 +10,20 @@
 
 .section .rodata
 	.FilePath: .string "../cache/record"
+	.NumBuff:  .zero 32
 
 .section .data
 	.FileDesc: .quad 0
 	.FileSize: .quad 0
 
 .section .bss
-	RecordScore: .zero 2
+	RecordScore: .zero 8
 	.globl RecordScore
 
 	RecordPlayer: .quad 0
 	.globl RecordPlayer
+
+	.Buffer: .quad 0
 
 .section .text
 
@@ -29,9 +32,13 @@
 .globl _getRecord
 
 _getRecord:
-	RDFILE	.FilePath(%rip), .FileDesc, .FileSize
+	RDFILE	.FilePath(%rip), .FileDesc, .FileSize, .Buffer(%rip)
 	movq	(.FileSize), %rax
 	cmpq	$0, %rax
 	jz	.return
-.return:
+	movq	.Buffer(%rip), %rdi
+	call	_getNumber
+	movq	%rax, (RecordScore)
+	incq	%rdi
+	movq	%rdi, (RecordPlayer)
 	ret

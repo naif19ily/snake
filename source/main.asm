@@ -35,11 +35,11 @@
 
 _start:
 	movq	%rsp, %r15
+        call    _getRecord
 	call	_parseArgs
 	call	._getTermsz
 	call	_sysStart
 	call	._drawBoard
-        call    _getRecord
 	call	_loop
 	call	_sysFinish
 ._fini:

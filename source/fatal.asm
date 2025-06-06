@@ -28,3 +28,7 @@ fatal_unk_op:
 .globl fatal_cannot_open_file
 fatal_cannot_open_file:
 	EXIT	$5
+
+.globl fatal_huge_number
+fatal_huge_number:
+	EXIT	$6
