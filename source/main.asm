@@ -39,6 +39,7 @@ _start:
 	call	._getTermsz
 	call	_sysStart
 	call	._drawBoard
+        call    _getRecord
 	call	_loop
 	call	_sysFinish
 ._fini:

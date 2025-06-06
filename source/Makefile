@@ -4,7 +4,7 @@
 # \__ \ | | | (_| |   <  __/
 # |___/_| |_|\__,_|_|\_\___|
 
-objs = main.o fp86.o boardata.o sys.o game.o over.o args.o fatal.o
+objs = main.o fp86.o boardata.o sys.o game.o over.o args.o fatal.o score.o
 flag =
 assb = as
 name = snake

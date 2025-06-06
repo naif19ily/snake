@@ -29,6 +29,7 @@
 	.InfoHead:  .string "\x1b[56;13H %d %d     "
 	.InfoScore: .string "\x1b[55;13H %d        "
         .InfoUsrnm: .string "\x1b[57;13H %s"
+	.InfoRecrd: .string "\x1b[58;13H %d by %s"
 
 .section .text
 
@@ -144,12 +145,21 @@ _loop:
 	movw	$6, (.SnakeBody + 2)
 	GENFOOD
         # Printing username
-	movq	(ArgUsrName), %rax
+	movq	ArgUsrName(%rip), %rax
         pushq   %rax
         leaq    .InfoUsrnm(%rip), %rdi
         movl    $1, %esi
         call    fp86
         addq    $8, %rsp
+        # Printing record
+	movq	RecordPlayer(%rip), %rax
+        pushq   %rax
+	movq	RecordScore(%rip), %rax
+        pushq   %rax
+        leaq    .InfoRecrd(%rip), %rdi
+        movl    $1, %esi
+        call    fp86
+        addq    $16, %rsp
 .toujour:
 	movq	$0, %rax
 	movq	$0, %rdi

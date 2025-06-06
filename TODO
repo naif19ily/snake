@@ -16,6 +16,5 @@
     self-collisions                                 (599107a)
     game over screen                                (73cbe2c)       Yes
     username as exec argument                       (dc0c177)
-    store info into file
-    replay argument
+    record file (reading file)
 

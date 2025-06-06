@@ -24,3 +24,7 @@ fatal_cpu:
 .globl fatal_unk_op
 fatal_unk_op:
 	EXIT	$4
+
+.globl fatal_cannot_open_file
+fatal_cannot_open_file:
+	EXIT	$5

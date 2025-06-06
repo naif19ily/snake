@@ -10,13 +10,15 @@
 # S stands for save:   snake S <game-name>
 #
 
-.section .bbs
-
+.section .rodata
+	.DefaultName: .string "unknown"
+	.DefaultGame: .string "game"
+	.DefaultRepl: .string ""
 
 .section .data
-	ArgUsrName:  .string "unknown"
-	ArgGameName: .string "game"
-	ArgReplay:   .string ""
+	ArgUsrName:  .quad 0
+	ArgGameName: .quad 0
+	ArgReplay:   .quad 0
 
 	.globl ArgUsrName
 	.globl ArgGameName
@@ -35,6 +37,12 @@
 .globl _parseArgs
 
 _parseArgs:
+	leaq	.DefaultName(%rip), %rax
+	movq	%rax, (ArgUsrName)
+	leaq	.DefaultGame(%rip), %rax
+	movq	%rax, (ArgGameName)
+	leaq	.DefaultRepl(%rip), %rax
+	movq	%rax, (ArgReplay)
 	movq	0(%r15), %rax
 	cmpq	$1, %rax
 	jz	.return
@@ -55,14 +63,17 @@ _parseArgs:
 	jmp	fatal_unk_op
 .P:
 	ARG_Q
+	leaq	(%rax), %rax
 	movq	%rax, (ArgUsrName)
 	jmp	.continue
 .S:
 	ARG_Q
+	leaq	(%rax), %rax
 	movq	%rax, (ArgGameName)
 	jmp	.continue
 .R:
 	ARG_Q
+	leaq	(%rax), %rax
 	movq	%rax, (ArgReplay)
 	jmp	.continue
 .continue:
