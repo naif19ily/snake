@@ -42,3 +42,5 @@ _getRecord:
 	incq	%rdi
 	movq	%rdi, (RecordPlayer)
 	ret
+.return:
+        ret
