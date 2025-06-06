@@ -23,7 +23,7 @@
      d = days;
      time_t Y = 1970;
 
-     while (Y <= y)
+     while (1)
      {
         time_t a = 365;
         if (Y % 4 == 0) { a = 366; }

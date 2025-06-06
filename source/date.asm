@@ -56,6 +56,24 @@ _getDate:
 	incq	-24(%rbp)
 	jmp	.get_year_loop
 .got_year:
-	movq	$60, %rax
-	movq	-24(%rbp), %rdi
-	syscall
+	movq	-8(%rbp), %r8
+	movq	$1970, %r9
+.get_month_loop:
+	movq	%r9, %rax
+	xorq	%rdx, %rdx
+	movq	$4, %rbx
+	divq	%rbx
+	cmpq	$0, %rdx
+	jz	.is_366
+	movq	$365, %r10
+	jmp	.month_resume
+.is_366:
+	movq	$366, %r10
+.month_resume:
+	cmpq	%r10, %r8
+	jl	.got_month
+	subq	$12, -16(%rbp)
+	incq	%r9
+	subq	%r10, %r8
+	jmp	.get_month_loop
+.got_month:
