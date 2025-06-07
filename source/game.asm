@@ -152,11 +152,11 @@ _loop:
         call    fp86
         addq    $8, %rsp
         # Printing record
-        pushq   (ThisYear)
-        movq    ThisMonth(%rip), %rdi
+        pushq   (RecordYear)
+        movq    RecordMonth(%rip), %rdi
         movq    Months(, %rdi, 8), %rax
         pushq   %rax
-        pushq   (ThisDay)
+        pushq   (RecordDay)
 	movq	RecordPlayer(%rip), %rax
         pushq   %rax
 	movq	RecordScore(%rip), %rax

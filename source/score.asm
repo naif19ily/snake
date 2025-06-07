@@ -92,5 +92,3 @@ _newRecord:
         UNMAP   .Buffer(%rip), .FileSize(%rip)
 	leave
 	ret
-
-# TODO close file & unmap buffer

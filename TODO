@@ -17,8 +17,8 @@
     game over screen                                (73cbe2c)       Yes
     username as exec argument                       (dc0c177)
     record file (reading file)                      (005b66c)
-    read actual info from record file               (b2fd521)       Yes
-    update record                                   ()
+    read actual info from record file               (b2fd521)
+    update record                                   (9532a58)       Yes
     read info from game logs                        ()
     replay game                                     ()
 
