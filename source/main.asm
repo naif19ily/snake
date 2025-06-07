@@ -35,6 +35,9 @@
 
 _start:
 	movq	%rsp, %r15
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$8, %rsp
         call    _getDate
         call    _getRecord
 	call	_parseArgs
@@ -42,7 +45,13 @@ _start:
 	call	_sysStart
 	call	._drawBoard
 	call	_loop
+	cltq
+	movq	%rax, -8(%rbp)
 	call	_sysFinish
+        movq    -8(%rbp), %rdi
+	cmpq	(RecordScore), %rdi
+	jle	._fini
+	call	_newRecord
 ._fini:
 	EXIT	$0
 ._getTermsz:	

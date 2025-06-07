@@ -172,7 +172,7 @@ _loop:
 	movq	$1, %rdx
 	syscall
 	cmpb	$'q', -2(%rbp)
-	jz	.fini
+	jz	.quit
 	cmpb	$'w', -2(%rbp)
 	jz	.w
 	cmpb	$'a', -2(%rbp)
@@ -325,5 +325,11 @@ _loop:
 	movq	$0, %rsi
 	syscall
 .fini:
+        xorq    %rax, %rax
+        movw    -4(%rbp), %ax
+	leave
+	ret
+.quit:
+	movq	$0, %rax
 	leave
 	ret

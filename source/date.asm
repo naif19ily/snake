@@ -127,7 +127,7 @@ _getDate:
 	jmp	.get_month_loop
 .got_month:
 	incq	%r8
-	xorq	%rcx, %rcx
+        movq    $0, %rcx
 	leaq	.NoDays(%rip), %r9
 	movq	-16(%rbp), %rax
 	movq	%rax, (ThisMonth)
@@ -137,12 +137,12 @@ _getDate:
 	movq	-24(%rbp), %rax
 	movq	$4, %rbx
 	divq	%rbx
-	cmpq	$4, %rbx
+	cmpq	$0, %rdx
 	jnz	.get_day
 	incq	(.NoDays + 8)
 .get_day:
 	cmpq	-16(%rbp), %rcx
-	jz	.fini
+	jge	.fini
 	movq	(%r9), %rax
 	subq	%rax, %r8
 	addq	$8, %r9

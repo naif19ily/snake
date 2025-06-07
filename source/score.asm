@@ -10,7 +10,7 @@
 
 .section .rodata
 	.FilePath: .string "../cache/record"
-	.NumBuff:  .zero 32
+	.UpdScore: .string "%d\n%d %d %d\n%s"
 
 .section .data
 	.FileDesc: .quad 0
@@ -59,10 +59,38 @@ _getRecord:
 	movq	%rax, (RecordYear)
 	incq	%rdi
 	movq	%rdi, (RecordPlayer)
+        CLOSE   (.FileDesc)
 	ret
 .return:
         ret
 
-
+.globl _newRecord
+_newRecord:
+	pushq	%rbp
+	movq	%rsp, %rbp
+        movq    $2, %rax
+        movq    %rdi, %r8
+        leaq    .FilePath(%rip), %rdi
+        movq    $577, %rsi                                              # O_WRONLY, O_TRUNC, O_CREAT
+        movq    $292, %rdx                                              # no write permissions
+        syscall
+	cmpq	$-1, %rax
+	jz	fatal_cannot_open_file
+        movq    %rax, %rsi
+	movq	ArgUsrName(%rip), %rax
+	pushq	%rax
+	movq	(ThisYear), %rax
+	pushq	%rax
+	movq	(ThisMonth), %rax
+	pushq	%rax
+	movq	(ThisDay), %rax
+	pushq	%rax
+	pushq	%r8
+	leaq	.UpdScore(%rip), %rdi
+	call	fp86
+	addq	$40, %rsp
+        UNMAP   .Buffer(%rip), .FileSize(%rip)
+	leave
+	ret
 
 # TODO close file & unmap buffer
