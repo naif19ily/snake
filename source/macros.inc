@@ -10,7 +10,7 @@
 	syscall
 .endm
 
-.macro RDFILE path, fd, size, buff
+.macro OPFILE fd, path
 	movq	$2, %rax
 	leaq	\path, %rdi
 	movq	$2, %rsi
@@ -19,6 +19,9 @@
 	cmpq	$-1, %rax
 	jz	fatal_cannot_open_file
 	movq	%rax, (\fd)
+.endm
+
+.macro RDFILE fd, size, buff
 	movq	$8, %rax
 	movq	\fd, %rdi
 	xorq	%rsi, %rsi

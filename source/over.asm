@@ -4,7 +4,7 @@
 # \__ \ | | | (_| |   <  __/
 # |___/_| |_|\__,_|_|\_\___|
 #
-# Contains the ASCII art string to tell the play they just died.
+# Contains the ASCII art string to tell the player just died.
 #
 
 .section .rodata

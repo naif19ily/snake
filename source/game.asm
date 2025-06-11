@@ -9,16 +9,17 @@
 #
 
 .section .bss
-	.SnakeBody: .zero 4 * 1024
-	.FoodSpawn: .zero 4
-        .Grid:      .zero 50 * 100
+	.SnakeBody:   .zero 4 * 4999
+	.FoodSpawn:   .zero 4
+        .Grid:        .zero 50 * 100
 
 .section .data
+	.SnakeLength: .word 4999
 	.SnakeDelay:
 		.quad 0
 		.quad 90000000
 
-	.GameOverDelay:
+	.AnimDelay:
 		.quad 5
 		.quad 0
 
@@ -270,8 +271,12 @@ _loop:
 	incw	%r9w
 	jmp	.updv_loop
 .food_found:
-	movw	$0, -2(%rbp)
 	incw	-4(%rbp)
+	xorq	%rax, %rax
+	movw	-4(%rbp), %ax
+	cmpw	.SnakeLength(%rip), %ax
+	jz	.max_score
+	movw	$0, -2(%rbp)
         #
         # Remove the food from where it used
         # to be and generate a new one somehere else
@@ -321,7 +326,7 @@ _loop:
         jmp     .gameov_loop
 .delay:
 	movq	$35, %rax
-	leaq	.GameOverDelay(%rip), %rdi
+	leaq	.AnimDelay(%rip), %rdi
 	movq	$0, %rsi
 	syscall
 .fini:
@@ -333,3 +338,33 @@ _loop:
 	movq	$0, %rax
 	leave
 	ret
+.max_score:
+        #
+        # Printing the Game Over string
+        # in a fancy way...
+        #
+        leaq    MaxScore(%rip), %r8
+	xorq	%r9, %r9
+	movw	(TermSize), %r9w
+	subw	$3, %r9w
+	shrw	$1, %r9w
+	xorq	%r10, %r10
+	movw	(TermSize + 2), %r10w
+	subw	$58, %r10w
+	shrw	$1, %r10w
+        movq    $0, %r11
+.maxscr_loop:
+        cmpq    $3, %r11
+        jz      .delay
+        pushq   (%r8)
+        pushq   %r10
+        pushq   %r9
+        xorq    %rsi, %rsi
+        movl    $1, %esi
+        leaq    Gfmt(%rip), %rdi
+        call    fp86
+        addq    $24, %rsp
+        addq    $8, %r8
+        incq    %r11
+        incq    %r9
+        jmp     .maxscr_loop

@@ -1,0 +1,14 @@
+
+                       __          
+    .-----.-----.---.-|  |--.-----.
+    |__ --|     |  _  |    <|  -__|
+    |_____|__|__|___._|__|__|_____|
+
+    This a "simple" project to see how skilled i am with x86_64 assembly, for sure
+    the core idea is the snake game but it also implements a RECORD file which
+    stores the highest score, you can also give an username to be remembered by using
+    P flag.
+
+    $ make
+    $ ./snake P playername
+

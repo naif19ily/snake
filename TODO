@@ -19,6 +19,7 @@
     record file (reading file)                      (005b66c)
     read actual info from record file               (b2fd521)
     update record                                   (9532a58)       Yes
+    register motions & food coords into file        ()
     read info from game logs                        ()
     replay game                                     ()
 

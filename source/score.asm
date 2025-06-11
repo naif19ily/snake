@@ -9,7 +9,7 @@
 #
 
 .section .rodata
-	.FilePath: .string "../cache/record"
+	.FilePath: .string "../RECORD"
 	.UpdScore: .string "%d\n%d %d %d\n%s"
 
 .section .data
@@ -41,7 +41,8 @@
 .globl _getRecord
 
 _getRecord:
-	RDFILE	.FilePath(%rip), .FileDesc, .FileSize, .Buffer(%rip)
+	OPFILE	.FileDesc, .FilePath(%rip)
+	RDFILE	.FileDesc, .FileSize, .Buffer(%rip)
 	movq	(.FileSize), %rax
 	cmpq	$0, %rax
 	jz	.return
